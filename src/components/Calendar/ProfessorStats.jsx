@@ -2,6 +2,7 @@ import React from 'react';
 import { Clock, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
+
 const ProfessorStats = ({ slotsByStep }) => {
   const calculateGlobalStats = () => {
     const stats = {};
