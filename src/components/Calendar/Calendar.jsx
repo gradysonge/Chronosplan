@@ -38,7 +38,7 @@ const Calendar = () => {
     let currentGroup = null;
 
     slots.forEach((slot) => {
-      if (!currentGroup || 
+      if (!currentGroup ||
           currentGroup.professor.id !== slot.professor.id ||
           currentGroup.day !== slot.day ||
           parseInt(slot.startTime) !== parseInt(currentGroup.endTime)) {
@@ -72,12 +72,12 @@ const Calendar = () => {
 
   const isSlotAvailable = (day, hour, consecutiveHours = 1) => {
     const currentStepSlots = slotsByStep[selectedViewStep?.id] || [];
-    
+
     for (let i = 0; i < consecutiveHours; i++) {
-      const conflictingSlots = currentStepSlots.filter(slot => 
-        slot.day === day && 
-        parseInt(slot.startTime) === (hour + i) &&
-        slot.course.code === filters.course?.code
+      const conflictingSlots = currentStepSlots.filter(slot =>
+          slot.day === day &&
+          parseInt(slot.startTime) === (hour + i) &&
+          slot.course.code === filters.course?.code
       );
 
       if (conflictingSlots.length >= 2) {
@@ -88,7 +88,7 @@ const Calendar = () => {
       if (sameMode) {
         return false;
       }
-      
+
       if (hour + i >= 22) {
         return false;
       }
@@ -141,14 +141,14 @@ const Calendar = () => {
     }
 
     const consecutiveHours = filters.token?.id || 1;
-    
+
     if (!isSlotAvailable(day, hour, consecutiveHours)) {
       alert('Cette plage horaire n\'est pas disponible pour le nombre d\'heures demandé');
       return;
     }
 
     const newSlots = createConsecutiveSlots(day, hour, consecutiveHours, filters.professor);
-    
+
     setSlotsByStep(prev => ({
       ...prev,
       [selectedViewStep.id]: [...(prev[selectedViewStep.id] || []), ...newSlots]
@@ -162,29 +162,44 @@ const Calendar = () => {
     resetFilters();
   };
 
+  //===============================================================================
+  const handleSlotDelete = (slotId) => {
+    setSlotsByStep(prev => {
+      const updatedSlots = { ...prev };
+
+      // Supprimer le créneau spécifique
+      Object.keys(updatedSlots).forEach(stepId => {
+        updatedSlots[stepId] = updatedSlots[stepId].filter(slot => slot.id !== slotId);
+      });
+
+      return updatedSlots;
+    });
+  };
+  //==========================================================================
+
   const currentStepSlots = selectedViewStep ? (slotsByStep[selectedViewStep.id] || []) : [];
   const groupedTimeSlots = groupConsecutiveSlots(currentStepSlots);
 
-  const visibleHours = filters.token 
-    ? hours.filter(hour => {
+  const visibleHours = filters.token
+      ? hours.filter(hour => {
         const consecutiveHours = filters.token.id;
         return hour + consecutiveHours <= 22;
       })
-    : hours;
+      : hours;
 
   const isSlotInPreview = (day, hour) => {
     if (!hoveredSlot || !filters.token) return false;
     const { day: hoverDay, hour: hoverHour } = hoveredSlot;
     const tokenCount = filters.token.id;
-    
-    return day === hoverDay && 
-           hour >= hoverHour && 
-           hour < (hoverHour + tokenCount);
+
+    return day === hoverDay &&
+        hour >= hoverHour &&
+        hour < (hoverHour + tokenCount);
   };
 
   const getSlotBackgroundColor = (day, hour, isAvailable, canSelect, isPreview) => {
     const existingSlot = currentStepSlots.find(
-      slot => slot.day === day && parseInt(slot.startTime) === hour
+        slot => slot.day === day && parseInt(slot.startTime) === hour
     );
 
     if (existingSlot) {
@@ -204,45 +219,48 @@ const Calendar = () => {
 
   const renderTimeSlots = (day, hour) => {
     const slots = groupedTimeSlots.filter(
-      slot => slot.day === day && parseInt(slot.startTime) === hour
+        slot => slot.day === day && parseInt(slot.startTime) === hour
     );
 
     if (slots.length === 0) return null;
 
     if (slots.length === 2) {
       return (
-        <div className="grid grid-cols-2 gap-1 h-full">
-          {slots.map((slot) => (
-            <TimeSlot
-              key={slot.id}
-              startTime={slot.startTime}
-              endTime={slot.endTime}
-              professor={slot.professor}
-              course={slot.course}
-              courseMode={slot.courseMode}
-              consecutive={slot.consecutive}
-              color={slot.color}
-            />
-          ))}
-        </div>
+          <div className="grid grid-cols-2 gap-1 h-full">
+            {slots.map((slot) => (
+                <TimeSlot
+                    key={slot.id}
+                    startTime={slot.startTime}
+                    endTime={slot.endTime}
+                    professor={slot.professor}
+                    course={slot.course}
+                    courseMode={slot.courseMode}
+                    consecutive={slot.consecutive}
+                    color={slot.color}
+                    onDelete={() => handleSlotDelete(slot.id)} // Passer la fonction de suppression
+                />
+            ))}
+          </div>
       );
     }
 
     return slots.map((slot) => (
-      <TimeSlot
-        key={slot.id}
-        startTime={slot.startTime}
-        endTime={slot.endTime}
-        professor={slot.professor}
-        course={slot.course}
-        courseMode={slot.courseMode}
-        consecutive={slot.consecutive}
-        color={slot.color}
-      />
+        <TimeSlot
+            key={slot.id}
+            startTime={slot.startTime}
+            endTime={slot.endTime}
+            professor={slot.professor}
+            course={slot.course}
+            courseMode={slot.courseMode}
+            consecutive={slot.consecutive}
+            color={slot.color}
+            onDelete={() => handleSlotDelete(slot.id)} // Passer la fonction de suppression
+        />
     ));
   };
 
   return (
+
     <div className="h-screen flex flex-col overflow-hidden">
       <div className="flex-none p-6">
         <CalendarHeader onFilterChange={handleFilterChange} filters={filters} />
@@ -281,11 +299,13 @@ const Calendar = () => {
                 >
                   {day}
                 </div>
+
               ))}
             </div>
 
             <div className="grid grid-cols-5">
               {daysOfWeek.map((day) => (
+
                 <div key={day} className="border-r last:border-r-0">
                   {visibleHours.map((hour) => {
                     const consecutiveHours = filters.token?.id || 1;
@@ -316,12 +336,12 @@ const Calendar = () => {
                     );
                   })}
                 </div>
+
               ))}
             </div>
           </div>
         </div>
       </div>
-    </div>
   );
 };
 
