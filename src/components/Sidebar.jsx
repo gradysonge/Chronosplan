@@ -53,6 +53,7 @@ const Sidebar = () => {
         </NavLink>
 
         <NavLink
+        //Hello
           to="/professors"
           className={({ isActive }) =>
             clsx(
