@@ -11,6 +11,7 @@ const user = {
 
 const Sidebar = () => {
   return (
+    // Hi I'm Charles
     <div className="flex flex-col h-screen bg-emerald-900 text-white w-64 p-4">
       <div className="flex items-center space-x-3 mb-8">
         {user.avatar && (
