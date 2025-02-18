@@ -163,6 +163,8 @@ const Calendar = () => {
   };
 
   //===============================================================================
+  
+
   const handleSlotDelete = (slotId) => {
     setSlotsByStep(prev => {
       const updatedSlots = { ...prev };
@@ -343,6 +345,7 @@ const Calendar = () => {
         </div>
       </div>
     </div>
+    //=======
   );
 };
 
