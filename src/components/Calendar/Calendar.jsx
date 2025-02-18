@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import CalendarHeader from './CalendarHeader';
 import TimeSlot from './TimeSlot';
 import StepSelector from './StepSelector';
+import ProfessorStats from './ProfessorStats';
 import { professors } from '../../data/mockData';
 
 const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
@@ -20,7 +21,7 @@ const professorColors = {
   P10: { bg: 'bg-cyan-100 hover:bg-cyan-200', badge: 'bg-cyan-500' },
 };
 
-const Calendar = () => { 
+const Calendar = () => {
   const [slotsByStep, setSlotsByStep] = useState({});
   const [filters, setFilters] = useState({
     professor: null,
@@ -182,7 +183,6 @@ const Calendar = () => {
   };
 
   const getSlotBackgroundColor = (day, hour, isAvailable, canSelect, isPreview) => {
-    // Vérifier si le créneau est déjà réservé
     const existingSlot = currentStepSlots.find(
       slot => slot.day === day && parseInt(slot.startTime) === hour
     );
@@ -268,52 +268,56 @@ const Calendar = () => {
         )}
       </div>
       
-      <div className="flex-1 overflow-auto px-6 pb-6">
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="sticky top-0 z-10 bg-white grid grid-cols-5 border-b">
-            {daysOfWeek.map((day) => (
-              <div
-                key={day}
-                className="px-4 py-3 text-center font-semibold text-gray-700 border-r last:border-r-0"
-              >
-                {day}
-              </div>
-            ))}
-          </div>
+      <div className="flex-1 overflow-hidden px-6 pb-6">
+        <div className="flex h-full">
+          <ProfessorStats slotsByStep={slotsByStep} />
+          
+          <div className="flex-1 bg-white rounded-lg shadow-sm overflow-auto">
+            <div className="sticky top-0 z-10 bg-white grid grid-cols-5 border-b">
+              {daysOfWeek.map((day) => (
+                <div
+                  key={day}
+                  className="px-4 py-3 text-center font-semibold text-gray-700 border-r last:border-r-0"
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
 
-          <div className="grid grid-cols-5">
-            {daysOfWeek.map((day) => (
-              <div key={day} className="border-r last:border-r-0">
-                {visibleHours.map((hour) => {
-                  const consecutiveHours = filters.token?.id || 1;
-                  const isAvailable = isSlotAvailable(day, hour, consecutiveHours);
-                  const canSelect = selectedViewStep && areAllFiltersSelected() && isAvailable;
-                  const isPreview = isSlotInPreview(day, hour);
-                  const backgroundColor = getSlotBackgroundColor(day, hour, isAvailable, canSelect, isPreview);
+            <div className="grid grid-cols-5">
+              {daysOfWeek.map((day) => (
+                <div key={day} className="border-r last:border-r-0">
+                  {visibleHours.map((hour) => {
+                    const consecutiveHours = filters.token?.id || 1;
+                    const isAvailable = isSlotAvailable(day, hour, consecutiveHours);
+                    const canSelect = selectedViewStep && areAllFiltersSelected() && isAvailable;
+                    const isPreview = isSlotInPreview(day, hour);
+                    const backgroundColor = getSlotBackgroundColor(day, hour, isAvailable, canSelect, isPreview);
 
-                  return (
-                    <div
-                      key={hour}
-                      className={`h-24 border-b last:border-b-0 p-2 transition-colors duration-150 ${
-                        canSelect ? 'cursor-pointer hover:bg-gray-50' : 'cursor-not-allowed'
-                      } ${backgroundColor} ${
-                        isPreview && filters.professor
-                          ? `border-2 border-${professorColors[filters.professor.id].badge.replace('bg-', '')}`
-                          : ''
-                      }`}
-                      onClick={() => handleSlotClick(day, hour)}
-                      onMouseEnter={() => canSelect && setHoveredSlot({ day, hour })}
-                      onMouseLeave={() => setHoveredSlot(null)}
-                    >
-                      <div className="text-xs text-gray-500 mb-1">
-                        {`${hour}:00`}
+                    return (
+                      <div
+                        key={hour}
+                        className={`h-24 border-b last:border-b-0 p-2 transition-colors duration-150 ${
+                          canSelect ? 'cursor-pointer hover:bg-gray-50' : 'cursor-not-allowed'
+                        } ${backgroundColor} ${
+                          isPreview && filters.professor
+                            ? `border-2 border-${professorColors[filters.professor.id].badge.replace('bg-', '')}`
+                            : ''
+                        }`}
+                        onClick={() => handleSlotClick(day, hour)}
+                        onMouseEnter={() => canSelect && setHoveredSlot({ day, hour })}
+                        onMouseLeave={() => setHoveredSlot(null)}
+                      >
+                        <div className="text-xs text-gray-500 mb-1">
+                          {`${hour}:00`}
+                        </div>
+                        {renderTimeSlots(day, hour)}
                       </div>
-                      {renderTimeSlots(day, hour)}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
