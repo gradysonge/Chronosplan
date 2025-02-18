@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "clsx": "^2.1.0",
-    
     "gestion-emploi-temps": "file:",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
