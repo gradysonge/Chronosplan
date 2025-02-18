@@ -18,7 +18,7 @@ const ProfessorStats = ({ slotsByStep }) => {
             slotsByStep: {}
           };
         }
-
+//=================================================
         if (!stats[profId].slotsByStep[slot.step.id]) {
           stats[profId].slotsByStep[slot.step.id] = {
             step: slot.step,
