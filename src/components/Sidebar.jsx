@@ -36,7 +36,7 @@ const Sidebar = () => {
           }
         >
           <Home className="w-5 h-5" />
-          <span>Accueillll </span>
+          <span>Accueil</span>
         </NavLink>
 
         <NavLink
