@@ -18,8 +18,8 @@ const TimeSlot = ({ startTime, endTime, professor, course, courseMode, consecuti
         <span className="text-xs font-medium">
           {startTime} - {endTime}
         </span>
-        {consecutive > 1 && (
-          <span className={`text-xs ${color.badge} text-white px-2 py-0.5 rounded`}>
+          {consecutive > 1 && (
+              <span className={`text-xs ${color.badge} text-white px-2 py-0.5 rounded`}>
             {consecutive}h
           </span>
           )}
