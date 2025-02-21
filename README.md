@@ -1,4 +1,3 @@
-
 # Gestion des Emplois du Temps lacité-ChronosPlan
 
 Application web de gestion des emplois du temps pour les établissements d'enseignement, développée avec React et Tailwind CSS.
@@ -6,18 +5,19 @@ Application web de gestion des emplois du temps pour les établissements d'ensei
 ## 🚀 Fonctionnalités
 
 - **Gestion des Créneaux Horaires**
+
   - Attribution des cours par professeur
   - Gestion des conflits d'horaires
   - Support des cours en ligne et en présentiel
   - Créneaux flexibles de 1 à 3 heures
-
 - **Vue Calendrier Interactive**
+
   - Affichage hebdomadaire (Lundi à Vendredi)
   - Plages horaires de 8h à 22h
   - Visualisation par étape
   - Aperçu en temps réel lors de la sélection
-
 - **Statistiques des Professeurs**
+
   - Suivi des heures par professeur
   - Répartition présentiel/en ligne
   - Export des emplois du temps individuels (Excel)
@@ -35,16 +35,19 @@ Application web de gestion des emplois du temps pour les établissements d'ensei
 ## 📦 Installation
 
 1. Clonez le dépôt :
+
 ```bash
 git clone [url-du-repo]
 ```
 
 2. Installez les dépendances :
+
 ```bash
 npm install
 ```
 
 3. Lancez le serveur de développement :
+
 ```bash
 npm run dev
 ```
@@ -81,6 +84,7 @@ npm run dev
 ## 🎨 Personnalisation
 
 Les couleurs des créneaux sont attribuées automatiquement par professeur :
+
 - P1 : Bleu
 - P2 : Vert
 - P3 : Violet
@@ -93,6 +97,3 @@ A definir
 ## 📄 Licence
 
 A definir
-=======
-# Projet Chronos Plan
-
