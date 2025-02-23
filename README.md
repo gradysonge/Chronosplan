@@ -1,5 +1,4 @@
 # Gestion des Emplois du Temps lacité-ChronosPlan
-
 Application web de gestion des emplois du temps pour les établissements d'enseignement, développée avec React et Tailwind CSS.
 
 ## 🚀 Fonctionnalités
