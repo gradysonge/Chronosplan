@@ -63,7 +63,6 @@ npm run dev
    - Mode d'enseignement
    - Étape
    - Durée (Token shift)
-3. Cliquez sur un créneau disponible dans le calendrier
 
 ### Règles de Gestion
 
