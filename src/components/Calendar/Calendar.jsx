@@ -4,7 +4,7 @@ import TimeSlot from './TimeSlot';
 import StepSelector from './StepSelector';
 import ProfessorStats from './ProfessorStats';
 import { professors } from '../../data/mockData';
-import { X } from 'lucide-react';
+import { X, Clock, BookOpen, Users, Monitor } from 'lucide-react';
 
 const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
 const hours = Array.from({ length: 15 }, (_, i) => i + 8); // 8:00 to 22:00
@@ -78,15 +78,14 @@ const Calendar = () => {
     for (let i = 0; i < consecutiveHours; i++) {
       const conflictingSlots = currentStepSlots.filter(slot => 
         slot.day === day && 
-        parseInt(slot.startTime) === (hour + i)
+        parseInt(slot.startTime) === (hour + i) &&
+        slot.course.code === filters.course?.code
       );
 
-      // Si on a déjà 2 créneaux différents sur ce slot
       if (conflictingSlots.length >= 2) {
         return false;
       }
 
-      // Si on a un créneau avec le même mode d'enseignement
       const sameMode = conflictingSlots.find(slot => slot.courseMode.id === filters.courseMode?.id);
       if (sameMode) {
         return false;
@@ -289,48 +288,59 @@ const Calendar = () => {
         )}
 
         {selectedSlot && (
-          <div className="mb-6 p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
-            <div className="flex justify-between items-start">
-              <h3 className="text-lg font-semibold text-gray-800">Détails de la réservation</h3>
+          <div className="mb-4 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2 border-b bg-gray-50">
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${selectedSlot.color.badge}`} />
+                <h3 className="text-sm font-medium text-gray-700">Détails de la réservation</h3>
+              </div>
               <button
                 onClick={() => setSelectedSlot(null)}
-                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-1 hover:bg-gray-200 rounded-full transition-colors"
               >
-                <X className="w-5 h-5 text-gray-500" />
+                <X className="w-4 h-4 text-gray-500" />
               </button>
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Professeur</p>
-                <div className="mt-1 flex items-center">
+            <div className="p-3 flex items-center space-x-6">
+              <div className="flex items-center space-x-2">
+                <Users className="w-4 h-4 text-gray-400" />
+                <div className="flex items-center">
                   <img
                     src={selectedSlot.professor.avatar}
                     alt={selectedSlot.professor.name}
                     className="w-6 h-6 rounded-full mr-2"
                   />
-                  <p className="text-gray-800">
-                    {selectedSlot.professor.name} ({selectedSlot.professor.code})
-                  </p>
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">{selectedSlot.professor.name}</p>
+                    <p className="text-xs text-gray-500">{selectedSlot.professor.code}</p>
+                  </div>
                 </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Cours</p>
-                <p className="mt-1 text-gray-800">
-                  {selectedSlot.course.code} - {selectedSlot.course.name}
-                </p>
+
+              <div className="flex items-center space-x-2">
+                <BookOpen className="w-4 h-4 text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-800">{selectedSlot.course.code}</p>
+                  <p className="text-xs text-gray-500">{selectedSlot.course.name}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Horaire</p>
-                <p className="mt-1 text-gray-800">
-                  {selectedSlot.day}, {selectedSlot.startTime} - {selectedSlot.endTime}
-                </p>
+
+              <div className="flex items-center space-x-2">
+                <Clock className="w-4 h-4 text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-800">{selectedSlot.day}</p>
+                  <p className="text-xs text-gray-500">{selectedSlot.startTime} - {selectedSlot.endTime}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Mode d'enseignement</p>
-                <p className="mt-1 text-gray-800 flex items-center">
-                  <span className="mr-2">{selectedSlot.courseMode.icon}</span>
-                  {selectedSlot.courseMode.name}
-                </p>
+
+              <div className="flex items-center space-x-2">
+                <Monitor className="w-4 h-4 text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-800 flex items-center">
+                    <span className="mr-1">{selectedSlot.courseMode.icon}</span>
+                    {selectedSlot.courseMode.name}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
