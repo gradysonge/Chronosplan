@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, Users, BookOpen, GraduationCap, Clock } from 'lucide-react';
+import { ChevronDown, Users, BookOpen, GraduationCap, Clock , Blend } from 'lucide-react';
 import { professors, courses, steps, courseModes, tokens } from '../../data/mockData';
 
 const getIconComponent = (iconType, className = "w-4 h-4") => {
@@ -12,7 +12,10 @@ const getIconComponent = (iconType, className = "w-4 h-4") => {
       return <GraduationCap className={className} />;
     case 'clock':
       return <Clock className={className} />;
+      case 'blend':
+        return <Blend className={className} />;
     default:
+      
       return null;
   }
 };
@@ -101,6 +104,7 @@ const CalendarHeader = ({ onFilterChange, filters }) => {
           options={courseModes}
           value={filters?.courseMode ? `${filters.courseMode.icon} ${filters.courseMode.name}` : ''}
           onChange={handleCourseModeChange}
+          iconType="blend"
         />
         <Dropdown
           label="Étapes"
@@ -110,7 +114,7 @@ const CalendarHeader = ({ onFilterChange, filters }) => {
           iconType="graduation"
         />
         <Dropdown
-          label="Token shift"
+          label="Heure(s)"
           options={tokens}
           value={filters?.token?.name || ''}
           onChange={handleTokenChange}

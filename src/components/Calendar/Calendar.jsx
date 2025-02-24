@@ -4,6 +4,7 @@ import TimeSlot from './TimeSlot';
 import StepSelector from './StepSelector';
 import ProfessorStats from './ProfessorStats';
 import { professors } from '../../data/mockData';
+import { X, Clock, BookOpen, Users, Monitor } from 'lucide-react';
 
 const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
 const hours = Array.from({ length: 15 }, (_, i) => i + 8); // 8:00 to 22:00
@@ -32,13 +33,14 @@ const Calendar = () => {
   });
   const [selectedViewStep, setSelectedViewStep] = useState(null);
   const [hoveredSlot, setHoveredSlot] = useState(null);
+  const [selectedSlot, setSelectedSlot] = useState(null);
 
   const groupConsecutiveSlots = (slots) => {
     const grouped = [];
     let currentGroup = null;
 
     slots.forEach((slot) => {
-      if (!currentGroup ||
+      if (!currentGroup || 
           currentGroup.professor.id !== slot.professor.id ||
           currentGroup.day !== slot.day ||
           parseInt(slot.startTime) !== parseInt(currentGroup.endTime)) {
@@ -72,12 +74,12 @@ const Calendar = () => {
 
   const isSlotAvailable = (day, hour, consecutiveHours = 1) => {
     const currentStepSlots = slotsByStep[selectedViewStep?.id] || [];
-
+    
     for (let i = 0; i < consecutiveHours; i++) {
-      const conflictingSlots = currentStepSlots.filter(slot =>
-          slot.day === day &&
-          parseInt(slot.startTime) === (hour + i) &&
-          slot.course.code === filters.course?.code
+      const conflictingSlots = currentStepSlots.filter(slot => 
+        slot.day === day && 
+        parseInt(slot.startTime) === (hour + i) &&
+        slot.course.code === filters.course?.code
       );
 
       if (conflictingSlots.length >= 2) {
@@ -88,7 +90,7 @@ const Calendar = () => {
       if (sameMode) {
         return false;
       }
-
+      
       if (hour + i >= 22) {
         return false;
       }
@@ -141,14 +143,14 @@ const Calendar = () => {
     }
 
     const consecutiveHours = filters.token?.id || 1;
-
+    
     if (!isSlotAvailable(day, hour, consecutiveHours)) {
       alert('Cette plage horaire n\'est pas disponible pour le nombre d\'heures demandé');
       return;
     }
 
     const newSlots = createConsecutiveSlots(day, hour, consecutiveHours, filters.professor);
-
+    
     setSlotsByStep(prev => ({
       ...prev,
       [selectedViewStep.id]: [...(prev[selectedViewStep.id] || []), ...newSlots]
@@ -160,48 +162,45 @@ const Calendar = () => {
   const handleStepChange = (step) => {
     setSelectedViewStep(step);
     resetFilters();
+    setSelectedSlot(null);
   };
-
-  //===============================================================================
-  
 
   const handleSlotDelete = (slotId) => {
-    setSlotsByStep(prev => {
-      const updatedSlots = { ...prev };
-
-      // Supprimer le créneau spécifique
-      Object.keys(updatedSlots).forEach(stepId => {
-        updatedSlots[stepId] = updatedSlots[stepId].filter(slot => slot.id !== slotId);
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce créneau ?')) {
+      setSlotsByStep(prev => {
+        const updatedSlots = { ...prev };
+        Object.keys(updatedSlots).forEach(stepId => {
+          updatedSlots[stepId] = updatedSlots[stepId].filter(slot => slot.id !== slotId);
+        });
+        return updatedSlots;
       });
-
-      return updatedSlots;
-    });
+      setSelectedSlot(null);
+    }
   };
-  //==========================================================================
 
   const currentStepSlots = selectedViewStep ? (slotsByStep[selectedViewStep.id] || []) : [];
   const groupedTimeSlots = groupConsecutiveSlots(currentStepSlots);
 
-  const visibleHours = filters.token
-      ? hours.filter(hour => {
+  const visibleHours = filters.token 
+    ? hours.filter(hour => {
         const consecutiveHours = filters.token.id;
         return hour + consecutiveHours <= 22;
       })
-      : hours;
+    : hours;
 
   const isSlotInPreview = (day, hour) => {
     if (!hoveredSlot || !filters.token) return false;
     const { day: hoverDay, hour: hoverHour } = hoveredSlot;
     const tokenCount = filters.token.id;
-
-    return day === hoverDay &&
-        hour >= hoverHour &&
-        hour < (hoverHour + tokenCount);
+    
+    return day === hoverDay && 
+           hour >= hoverHour && 
+           hour < (hoverHour + tokenCount);
   };
 
   const getSlotBackgroundColor = (day, hour, isAvailable, canSelect, isPreview) => {
     const existingSlot = currentStepSlots.find(
-        slot => slot.day === day && parseInt(slot.startTime) === hour
+      slot => slot.day === day && parseInt(slot.startTime) === hour
     );
 
     if (existingSlot) {
@@ -221,48 +220,49 @@ const Calendar = () => {
 
   const renderTimeSlots = (day, hour) => {
     const slots = groupedTimeSlots.filter(
-        slot => slot.day === day && parseInt(slot.startTime) === hour
+      slot => slot.day === day && parseInt(slot.startTime) === hour
     );
 
     if (slots.length === 0) return null;
 
     if (slots.length === 2) {
       return (
-          <div className="grid grid-cols-2 gap-1 h-full">
-            {slots.map((slot) => (
-                <TimeSlot
-                    key={slot.id}
-                    startTime={slot.startTime}
-                    endTime={slot.endTime}
-                    professor={slot.professor}
-                    course={slot.course}
-                    courseMode={slot.courseMode}
-                    consecutive={slot.consecutive}
-                    color={slot.color}
-                    onDelete={() => handleSlotDelete(slot.id)} // Passer la fonction de suppression
-                />
-            ))}
-          </div>
+        <div className="grid grid-cols-2 gap-1 h-full">
+          {slots.map((slot) => (
+            <TimeSlot
+              key={slot.id}
+              startTime={slot.startTime}
+              endTime={slot.endTime}
+              professor={slot.professor}
+              course={slot.course}
+              courseMode={slot.courseMode}
+              consecutive={slot.consecutive}
+              color={slot.color}
+              onDelete={() => handleSlotDelete(slot.id)}
+              onClick={() => setSelectedSlot(slot)}
+            />
+          ))}
+        </div>
       );
     }
 
     return slots.map((slot) => (
-        <TimeSlot
-            key={slot.id}
-            startTime={slot.startTime}
-            endTime={slot.endTime}
-            professor={slot.professor}
-            course={slot.course}
-            courseMode={slot.courseMode}
-            consecutive={slot.consecutive}
-            color={slot.color}
-            onDelete={() => handleSlotDelete(slot.id)} // Passer la fonction de suppression
-        />
+      <TimeSlot
+        key={slot.id}
+        startTime={slot.startTime}
+        endTime={slot.endTime}
+        professor={slot.professor}
+        course={slot.course}
+        courseMode={slot.courseMode}
+        consecutive={slot.consecutive}
+        color={slot.color}
+        onDelete={() => handleSlotDelete(slot.id)}
+        onClick={() => setSelectedSlot(slot)}
+      />
     ));
   };
 
   return (
-
     <div className="h-screen flex flex-col overflow-hidden">
       <div className="flex-none p-6">
         <CalendarHeader onFilterChange={handleFilterChange} filters={filters} />
@@ -286,6 +286,65 @@ const Calendar = () => {
             </p>
           </div>
         )}
+
+        {selectedSlot && (
+          <div className="mb-4 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2 border-b bg-gray-50">
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${selectedSlot.color.badge}`} />
+                <h3 className="text-sm font-medium text-gray-700">Détails de la réservation</h3>
+              </div>
+              <button
+                onClick={() => setSelectedSlot(null)}
+                className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+              >
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+            <div className="p-3 flex items-center space-x-6">
+              <div className="flex items-center space-x-2">
+                <Users className="w-4 h-4 text-gray-400" />
+                <div className="flex items-center">
+                  <img
+                    src={selectedSlot.professor.avatar}
+                    alt={selectedSlot.professor.name}
+                    className="w-6 h-6 rounded-full mr-2"
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">{selectedSlot.professor.name}</p>
+                    <p className="text-xs text-gray-500">{selectedSlot.professor.code}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <BookOpen className="w-4 h-4 text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-800">{selectedSlot.course.code}</p>
+                  <p className="text-xs text-gray-500">{selectedSlot.course.name}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Clock className="w-4 h-4 text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-800">{selectedSlot.day}</p>
+                  <p className="text-xs text-gray-500">{selectedSlot.startTime} - {selectedSlot.endTime}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Monitor className="w-4 h-4 text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-800 flex items-center">
+                    <span className="mr-1">{selectedSlot.courseMode.icon}</span>
+                    {selectedSlot.courseMode.name}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       
       <div className="flex-1 overflow-hidden px-6 pb-6">
@@ -301,13 +360,11 @@ const Calendar = () => {
                 >
                   {day}
                 </div>
-
               ))}
             </div>
 
             <div className="grid grid-cols-5">
               {daysOfWeek.map((day) => (
-
                 <div key={day} className="border-r last:border-r-0">
                   {visibleHours.map((hour) => {
                     const consecutiveHours = filters.token?.id || 1;
@@ -338,14 +395,12 @@ const Calendar = () => {
                     );
                   })}
                 </div>
-
               ))}
             </div>
           </div>
         </div>
       </div>
     </div>
-    //=======
   );
 };
 
