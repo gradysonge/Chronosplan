@@ -1,8 +1,23 @@
 import React, { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { professors, courses, steps, courseModes } from '../../data/mockData';
+import { ChevronDown, Users, BookOpen, GraduationCap, Clock } from 'lucide-react';
+import { professors, courses, steps, courseModes, tokens } from '../../data/mockData';
 
-const Dropdown = ({ label, options, value, onChange, onClear }) => {
+const getIconComponent = (iconType, className = "w-4 h-4") => {
+  switch (iconType) {
+    case 'users':
+      return <Users className={className} />;
+    case 'book':
+      return <BookOpen className={className} />;
+    case 'graduation':
+      return <GraduationCap className={className} />;
+    case 'clock':
+      return <Clock className={className} />;
+    default:
+      return null;
+  }
+};
+
+const Dropdown = ({ label, options, value, onChange, iconType }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -13,9 +28,12 @@ const Dropdown = ({ label, options, value, onChange, onClear }) => {
           value ? 'border-emerald-200 bg-emerald-50' : 'border-gray-200'
         }`}
       >
-        <span className={`${value ? 'text-emerald-700' : 'text-gray-700'}`}>
-          {value || label}
-        </span>
+        <div className="flex items-center gap-2">
+          {iconType && <span className="text-gray-500">{getIconComponent(iconType)}</span>}
+          <span className={`${value ? 'text-emerald-700' : 'text-gray-700'}`}>
+            {value || label}
+          </span>
+        </div>
         <ChevronDown className={`w-5 h-5 ${value ? 'text-emerald-400' : 'text-gray-400'}`} />
       </button>
       
@@ -24,14 +42,14 @@ const Dropdown = ({ label, options, value, onChange, onClear }) => {
           {options.map((option) => (
             <div
               key={option.id || option.code}
-              className="px-4 py-2 hover:bg-emerald-50 cursor-pointer"
+              className="px-4 py-2 hover:bg-emerald-50 cursor-pointer flex items-center gap-2"
               onClick={() => {
                 onChange(option);
                 setIsOpen(false);
               }}
             >
-              {option.icon && <span className="mr-2">{option.icon}</span>}
-              {option.code ? `${option.code} - ${option.name}` : option.name}
+              {option.iconType ? getIconComponent(option.iconType) : option.icon}
+              <span>{option.code ? `${option.code} - ${option.name}` : option.name}</span>
             </div>
           ))}
         </div>
@@ -41,11 +59,6 @@ const Dropdown = ({ label, options, value, onChange, onClear }) => {
 };
 
 const CalendarHeader = ({ onFilterChange, filters }) => {
-  const tokens = Array.from({ length: 3 }, (_, i) => ({
-    id: i + 1,
-    name: `${i + 1} heure${i > 0 ? 's' : ''}`
-  }));
-
   const handleProfessorChange = (prof) => {
     onFilterChange?.({ professor: prof });
   };
@@ -74,12 +87,14 @@ const CalendarHeader = ({ onFilterChange, filters }) => {
           options={professors}
           value={filters?.professor ? `${filters.professor.code} - ${filters.professor.name}` : ''}
           onChange={handleProfessorChange}
+          iconType="users"
         />
         <Dropdown
           label="Code Cours"
           options={courses}
           value={filters?.course ? `${filters.course.code} - ${filters.course.name}` : ''}
           onChange={handleCourseChange}
+          iconType="book"
         />
         <Dropdown
           label="Mode d'enseignement"
@@ -92,12 +107,14 @@ const CalendarHeader = ({ onFilterChange, filters }) => {
           options={steps}
           value={filters?.step?.name || ''}
           onChange={handleStepChange}
+          iconType="graduation"
         />
         <Dropdown
           label="Token shift"
           options={tokens}
           value={filters?.token?.name || ''}
           onChange={handleTokenChange}
+          iconType="clock"
         />
       </div>
     </div>

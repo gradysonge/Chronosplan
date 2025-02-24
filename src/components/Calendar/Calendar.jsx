@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import CalendarHeader from './CalendarHeader';
 import TimeSlot from './TimeSlot';
 import StepSelector from './StepSelector';
+import ProfessorStats from './ProfessorStats';
 import { professors } from '../../data/mockData';
 
 const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
@@ -20,7 +21,7 @@ const professorColors = {
   P10: { bg: 'bg-cyan-100 hover:bg-cyan-200', badge: 'bg-cyan-500' },
 };
 
-const Calendar = () => { 
+const Calendar = () => {
   const [slotsByStep, setSlotsByStep] = useState({});
   const [filters, setFilters] = useState({
     professor: null,
@@ -37,7 +38,7 @@ const Calendar = () => {
     let currentGroup = null;
 
     slots.forEach((slot) => {
-      if (!currentGroup || 
+      if (!currentGroup ||
           currentGroup.professor.id !== slot.professor.id ||
           currentGroup.day !== slot.day ||
           parseInt(slot.startTime) !== parseInt(currentGroup.endTime)) {
@@ -71,12 +72,12 @@ const Calendar = () => {
 
   const isSlotAvailable = (day, hour, consecutiveHours = 1) => {
     const currentStepSlots = slotsByStep[selectedViewStep?.id] || [];
-    
+
     for (let i = 0; i < consecutiveHours; i++) {
-      const conflictingSlots = currentStepSlots.filter(slot => 
-        slot.day === day && 
-        parseInt(slot.startTime) === (hour + i) &&
-        slot.course.code === filters.course?.code
+      const conflictingSlots = currentStepSlots.filter(slot =>
+          slot.day === day &&
+          parseInt(slot.startTime) === (hour + i) &&
+          slot.course.code === filters.course?.code
       );
 
       if (conflictingSlots.length >= 2) {
@@ -87,7 +88,7 @@ const Calendar = () => {
       if (sameMode) {
         return false;
       }
-      
+
       if (hour + i >= 22) {
         return false;
       }
@@ -140,14 +141,14 @@ const Calendar = () => {
     }
 
     const consecutiveHours = filters.token?.id || 1;
-    
+
     if (!isSlotAvailable(day, hour, consecutiveHours)) {
       alert('Cette plage horaire n\'est pas disponible pour le nombre d\'heures demandé');
       return;
     }
 
     const newSlots = createConsecutiveSlots(day, hour, consecutiveHours, filters.professor);
-    
+
     setSlotsByStep(prev => ({
       ...prev,
       [selectedViewStep.id]: [...(prev[selectedViewStep.id] || []), ...newSlots]
@@ -161,30 +162,46 @@ const Calendar = () => {
     resetFilters();
   };
 
+  //===============================================================================
+  
+
+  const handleSlotDelete = (slotId) => {
+    setSlotsByStep(prev => {
+      const updatedSlots = { ...prev };
+
+      // Supprimer le créneau spécifique
+      Object.keys(updatedSlots).forEach(stepId => {
+        updatedSlots[stepId] = updatedSlots[stepId].filter(slot => slot.id !== slotId);
+      });
+
+      return updatedSlots;
+    });
+  };
+  //==========================================================================
+
   const currentStepSlots = selectedViewStep ? (slotsByStep[selectedViewStep.id] || []) : [];
   const groupedTimeSlots = groupConsecutiveSlots(currentStepSlots);
 
-  const visibleHours = filters.token 
-    ? hours.filter(hour => {
+  const visibleHours = filters.token
+      ? hours.filter(hour => {
         const consecutiveHours = filters.token.id;
         return hour + consecutiveHours <= 22;
       })
-    : hours;
+      : hours;
 
   const isSlotInPreview = (day, hour) => {
     if (!hoveredSlot || !filters.token) return false;
     const { day: hoverDay, hour: hoverHour } = hoveredSlot;
     const tokenCount = filters.token.id;
-    
-    return day === hoverDay && 
-           hour >= hoverHour && 
-           hour < (hoverHour + tokenCount);
+
+    return day === hoverDay &&
+        hour >= hoverHour &&
+        hour < (hoverHour + tokenCount);
   };
 
   const getSlotBackgroundColor = (day, hour, isAvailable, canSelect, isPreview) => {
-    // Vérifier si le créneau est déjà réservé
     const existingSlot = currentStepSlots.find(
-      slot => slot.day === day && parseInt(slot.startTime) === hour
+        slot => slot.day === day && parseInt(slot.startTime) === hour
     );
 
     if (existingSlot) {
@@ -204,45 +221,48 @@ const Calendar = () => {
 
   const renderTimeSlots = (day, hour) => {
     const slots = groupedTimeSlots.filter(
-      slot => slot.day === day && parseInt(slot.startTime) === hour
+        slot => slot.day === day && parseInt(slot.startTime) === hour
     );
 
     if (slots.length === 0) return null;
 
     if (slots.length === 2) {
       return (
-        <div className="grid grid-cols-2 gap-1 h-full">
-          {slots.map((slot) => (
-            <TimeSlot
-              key={slot.id}
-              startTime={slot.startTime}
-              endTime={slot.endTime}
-              professor={slot.professor}
-              course={slot.course}
-              courseMode={slot.courseMode}
-              consecutive={slot.consecutive}
-              color={slot.color}
-            />
-          ))}
-        </div>
+          <div className="grid grid-cols-2 gap-1 h-full">
+            {slots.map((slot) => (
+                <TimeSlot
+                    key={slot.id}
+                    startTime={slot.startTime}
+                    endTime={slot.endTime}
+                    professor={slot.professor}
+                    course={slot.course}
+                    courseMode={slot.courseMode}
+                    consecutive={slot.consecutive}
+                    color={slot.color}
+                    onDelete={() => handleSlotDelete(slot.id)} // Passer la fonction de suppression
+                />
+            ))}
+          </div>
       );
     }
 
     return slots.map((slot) => (
-      <TimeSlot
-        key={slot.id}
-        startTime={slot.startTime}
-        endTime={slot.endTime}
-        professor={slot.professor}
-        course={slot.course}
-        courseMode={slot.courseMode}
-        consecutive={slot.consecutive}
-        color={slot.color}
-      />
+        <TimeSlot
+            key={slot.id}
+            startTime={slot.startTime}
+            endTime={slot.endTime}
+            professor={slot.professor}
+            course={slot.course}
+            courseMode={slot.courseMode}
+            consecutive={slot.consecutive}
+            color={slot.color}
+            onDelete={() => handleSlotDelete(slot.id)} // Passer la fonction de suppression
+        />
     ));
   };
 
   return (
+
     <div className="h-screen flex flex-col overflow-hidden">
       <div className="flex-none p-6">
         <CalendarHeader onFilterChange={handleFilterChange} filters={filters} />
@@ -268,56 +288,64 @@ const Calendar = () => {
         )}
       </div>
       
-      <div className="flex-1 overflow-auto px-6 pb-6">
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="sticky top-0 z-10 bg-white grid grid-cols-5 border-b">
-            {daysOfWeek.map((day) => (
-              <div
-                key={day}
-                className="px-4 py-3 text-center font-semibold text-gray-700 border-r last:border-r-0"
-              >
-                {day}
-              </div>
-            ))}
-          </div>
+      <div className="flex-1 overflow-hidden px-6 pb-6">
+        <div className="flex h-full">
+          <ProfessorStats slotsByStep={slotsByStep} />
+          
+          <div className="flex-1 bg-white rounded-lg shadow-sm overflow-auto">
+            <div className="sticky top-0 z-10 bg-white grid grid-cols-5 border-b">
+              {daysOfWeek.map((day) => (
+                <div
+                  key={day}
+                  className="px-4 py-3 text-center font-semibold text-gray-700 border-r last:border-r-0"
+                >
+                  {day}
+                </div>
 
-          <div className="grid grid-cols-5">
-            {daysOfWeek.map((day) => (
-              <div key={day} className="border-r last:border-r-0">
-                {visibleHours.map((hour) => {
-                  const consecutiveHours = filters.token?.id || 1;
-                  const isAvailable = isSlotAvailable(day, hour, consecutiveHours);
-                  const canSelect = selectedViewStep && areAllFiltersSelected() && isAvailable;
-                  const isPreview = isSlotInPreview(day, hour);
-                  const backgroundColor = getSlotBackgroundColor(day, hour, isAvailable, canSelect, isPreview);
+              ))}
+            </div>
 
-                  return (
-                    <div
-                      key={hour}
-                      className={`h-24 border-b last:border-b-0 p-2 transition-colors duration-150 ${
-                        canSelect ? 'cursor-pointer hover:bg-gray-50' : 'cursor-not-allowed'
-                      } ${backgroundColor} ${
-                        isPreview && filters.professor
-                          ? `border-2 border-${professorColors[filters.professor.id].badge.replace('bg-', '')}`
-                          : ''
-                      }`}
-                      onClick={() => handleSlotClick(day, hour)}
-                      onMouseEnter={() => canSelect && setHoveredSlot({ day, hour })}
-                      onMouseLeave={() => setHoveredSlot(null)}
-                    >
-                      <div className="text-xs text-gray-500 mb-1">
-                        {`${hour}:00`}
+            <div className="grid grid-cols-5">
+              {daysOfWeek.map((day) => (
+
+                <div key={day} className="border-r last:border-r-0">
+                  {visibleHours.map((hour) => {
+                    const consecutiveHours = filters.token?.id || 1;
+                    const isAvailable = isSlotAvailable(day, hour, consecutiveHours);
+                    const canSelect = selectedViewStep && areAllFiltersSelected() && isAvailable;
+                    const isPreview = isSlotInPreview(day, hour);
+                    const backgroundColor = getSlotBackgroundColor(day, hour, isAvailable, canSelect, isPreview);
+
+                    return (
+                      <div
+                        key={hour}
+                        className={`h-24 border-b last:border-b-0 p-2 transition-colors duration-150 ${
+                          canSelect ? 'cursor-pointer hover:bg-gray-50' : 'cursor-not-allowed'
+                        } ${backgroundColor} ${
+                          isPreview && filters.professor
+                            ? `border-2 border-${professorColors[filters.professor.id].badge.replace('bg-', '')}`
+                            : ''
+                        }`}
+                        onClick={() => handleSlotClick(day, hour)}
+                        onMouseEnter={() => canSelect && setHoveredSlot({ day, hour })}
+                        onMouseLeave={() => setHoveredSlot(null)}
+                      >
+                        <div className="text-xs text-gray-500 mb-1">
+                          {`${hour}:00`}
+                        </div>
+                        {renderTimeSlots(day, hour)}
                       </div>
-                      {renderTimeSlots(day, hour)}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+                    );
+                  })}
+                </div>
+
+              ))}
+            </div>
           </div>
         </div>
       </div>
     </div>
+    //=======
   );
 };
 

@@ -5,12 +5,14 @@ import clsx from 'clsx';
 
 const user = {
   name: 'Samir Elouasbi',
-  role: 'professeur',
+  role: 'Administrateur la cité',
+
   avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
 };
 
 const Sidebar = () => {
   return (
+    // Hi I'm Charles
     <div className="flex flex-col h-screen bg-emerald-900 text-white w-64 p-4">
       <div className="flex items-center space-x-3 mb-8">
         {user.avatar && (
@@ -53,6 +55,7 @@ const Sidebar = () => {
         </NavLink>
 
         <NavLink
+        //Hello
           to="/professors"
           className={({ isActive }) =>
             clsx(

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
+import Professors from './components/Professors';
 import Calendar from './components/Calendar/Calendar';
 
 function App() {
@@ -12,7 +13,7 @@ function App() {
           <Routes>
             <Route path="/" element={<div>Dashboard  a developper plus tard </div>} />
             <Route path="/calendar" element={<Calendar />} />
-            <Route path="/professors" element={<div>Professeurs a developper plus tard </div>} />
+            <Route path="/professors" element={<Professors/>} />
           </Routes>
         </main>
       </div>

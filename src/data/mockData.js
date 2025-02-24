@@ -8,15 +8,16 @@ export const professors = [
   // 
 ].map(prof => ({
   ...prof,
-  avatar: `https://i.pravatar.cc/150?u=${prof.id}`
+  avatar: `https://i.pravatar.cc/150?u=${prof.id}`,
+  iconType: 'users'
 }));
 
 export const courses = [
-  { code: 'MAT1234', name: 'Mathématiques ' },
-  { code: 'INF1120', name: 'Programmation I' },
-  { code: 'INF2120', name: 'Programmation II' },
-  { code: 'INF3190', name: 'Introduction à la programmation Web' },
-  { code: 'INF4170', name: 'Architecture des ordinateurs' },
+  { code: 'MAT1234', name: 'Mathématiques discrètes', iconType: 'book' },
+  { code: 'INF1120', name: 'Programmation I', iconType: 'book' },
+  { code: 'INF2120', name: 'Programmation II', iconType: 'book' },
+  { code: 'INF3190', name: 'Introduction à la programmation Web', iconType: 'book' },
+  { code: 'INF4170', name: 'Architecture des ordinateurs', iconType: 'book' },
 ];
 
 export const courseModes = [
@@ -26,5 +27,12 @@ export const courseModes = [
 
 export const steps = Array.from({ length: 6 }, (_, i) => ({
   id: i + 1,
-  name: `Étape ${i + 1}`
+  name: `Étape ${i + 1}`,
+  iconType: 'graduation'
+}));
+
+export const tokens = Array.from({ length: 3 }, (_, i) => ({
+  id: i + 1,
+  name: `${i + 1} heure${i > 0 ? 's' : ''}`,
+  iconType: 'clock'
 }));
