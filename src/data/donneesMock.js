@@ -14,11 +14,11 @@ export const professeurs = [
 }));
 
 export const cours = [
-  { code: '1234', nom: 'Mathématique', typeIcone: 'book', groupes: ['G010', 'G020'] },
-  { code: '1120', nom: 'Programmation I', typeIcone: 'book', groupes: ['G010', 'G020'] },
-  { code: '2120', nom: 'Intelligence Artificiel', typeIcone: 'book', groupes: ['G010', 'G020'] },
-  { code: '3190', nom: 'Introduction Infonuagique ', typeIcone: 'book', groupes: ['G010', 'G020'] },
-  { code: '4170', nom: 'Base de données massive', typeIcone: 'book', groupes: ['G010', 'G020'] },
+  { code: '1234', nom: 'Mathématique', typeIcone: 'book' },
+  { code: '1120', nom: 'Programmation I', typeIcone: 'book' },
+  { code: '2120', nom: 'Intelligence Artificiel', typeIcone: 'book' },
+  { code: '3190', nom: 'Introduction Infonuagique ', typeIcone: 'book' },
+  { code: '4170', nom: 'Base de données massive', typeIcone: 'book' },
 ];
 
 export const modesEnseignement = [
@@ -37,8 +37,3 @@ export const durees = Array.from({ length: 3 }, (_, i) => ({
   nom: `${i + 1} heure${i > 0 ? 's' : ''}`,
   typeIcone: 'clock'
 }));
-
-export const programmes = [
-  { id: 1, nom: 'Programmation' },
-  { id: 2, nom: 'Génie Informatique' },
-];

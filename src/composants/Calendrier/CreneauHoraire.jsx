@@ -1,7 +1,7 @@
 import React from 'react';
 import { Trash2, Info } from 'lucide-react';
 
-const CreneauHoraire = ({ heureDebut, heureFin, professeur, cours, modeCours, consecutifs, couleur, onSupprimer, onClick }) => {
+const CreneauHoraire = ({ heureDebut, heureFin, professeur, cours, groupe, modeCours, consecutifs, couleur, onSupprimer, onClick }) => {
   return (
     <div
       className={`rounded-lg p-2 mb-1 ${couleur.bg} transition-transform hover:scale-[1.02] group relative cursor-pointer`}
@@ -38,6 +38,8 @@ const CreneauHoraire = ({ heureDebut, heureFin, professeur, cours, modeCours, co
             <span>{cours.code}</span>
             <span className="text-gray-400">•</span>
             <span>{modeCours.icone}</span>
+            <span className="text-gray-400">•</span>
+            <span>G{groupe}</span>
           </div>
         </div>
       </div>

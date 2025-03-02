@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, Users, BookOpen, GraduationCap, Clock ,Blend} from 'lucide-react';
+import { ChevronDown, Users, BookOpen, GraduationCap, Clock, Blend } from 'lucide-react';
 import { professeurs, cours, etapes, modesEnseignement, durees } from '../../donnees/donneesMock';
 
 const obtenirComposantIcone = (typeIcone, className = "w-4 h-4") => {
@@ -12,7 +12,7 @@ const obtenirComposantIcone = (typeIcone, className = "w-4 h-4") => {
       return <GraduationCap className={className} />;
     case 'clock':
       return <Clock className={className} />;
-      case 'blend':
+    case 'blend':
       return <Blend className={className} />;
     default:
       return null;
@@ -61,12 +61,19 @@ const MenuDeroulant = ({ libelle, options, valeur, onChange, typeIcone }) => {
 };
 
 const EnTeteCalendrier = ({ onChangementFiltre, filtres }) => {
+  const [coursSelectionne, setCoursSelectionne] = useState(null);
+
   const gererChangementProfesseur = (prof) => {
     onChangementFiltre?.({ professeur: prof });
   };
 
   const gererChangementCours = (cours) => {
+    setCoursSelectionne(cours);
     onChangementFiltre?.({ cours });
+  };
+
+  const gererChangementGroupe = (groupe) => {
+    onChangementFiltre?.({ groupe });
   };
 
   const gererChangementModeCours = (mode) => {
@@ -83,7 +90,7 @@ const EnTeteCalendrier = ({ onChangementFiltre, filtres }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-6 gap-4">
         <MenuDeroulant
           libelle="Code Professeur"
           options={professeurs}
@@ -97,6 +104,13 @@ const EnTeteCalendrier = ({ onChangementFiltre, filtres }) => {
           valeur={filtres?.cours ? `${filtres.cours.code} - ${filtres.cours.nom}` : ''}
           onChange={gererChangementCours}
           typeIcone="book"
+        />
+        <MenuDeroulant
+          libelle="Groupe"
+          options={coursSelectionne?.groupes || []}
+          valeur={filtres?.groupe || ''}
+          onChange={gererChangementGroupe}
+          typeIcone="users"
         />
         <MenuDeroulant
           libelle="Mode d'enseignement"

@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import EnTeteCalendrier from './EnTeteCalendrier';
 import CreneauHoraire from './CreneauHoraire';
 import SelecteurEtape from './SelecteurEtape';
 import StatistiquesProfesseur from './StatistiquesProfesseur';
+import { ContexteAuth } from '../../contexte/Authentification';
 import { professeurs } from '../../donnees/donneesMock';
-import { X, Clock, BookOpen, Users, Monitor,Blend } from 'lucide-react';
+import { X, Clock, BookOpen, Users, Monitor, Blend } from 'lucide-react';
+import { validerLimiteCoursProfesseur } from '../../utils/Contraintes';
 
 const joursDelaSemaine = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
 const heures = Array.from({ length: 15 }, (_, i) => i + 8); // 8:00 to 22:00
@@ -23,10 +25,12 @@ const couleursProfesseurs = {
 };
 
 const Calendrier = () => {
+  const { estAuthentifie } = useContext(ContexteAuth);
   const [creneauxParEtape, setCreneauxParEtape] = useState({});
   const [filtres, setFiltres] = useState({
     professeur: null,
     cours: null,
+    groupe: null,
     modeCours: null,
     etape: null,
     duree: null
@@ -76,6 +80,7 @@ const Calendrier = () => {
     const creneauxEtapeActuelle = creneauxParEtape[etapeVueSelectionnee?.id] || [];
     
     for (let i = 0; i < heuresConsecutives; i++) {
+      // Vérifier les conflits de cours (logique existante)
       const creneauxConflictuels = creneauxEtapeActuelle.filter(creneau => 
         creneau.jour === jour && 
         parseInt(creneau.heureDebut) === (heure + i) &&
@@ -83,12 +88,24 @@ const Calendrier = () => {
       );
 
       if (creneauxConflictuels.length >= 2) {
-        return false;
+        return false; // Deux cours identiques ne peuvent pas être programmés en même temps
       }
 
+      // Vérifier le mode d'enseignement (logique existante)
       const memeModeEnseignement = creneauxConflictuels.find(creneau => creneau.modeCours.id === filtres.modeCours?.id);
       if (memeModeEnseignement) {
         return false;
+      }
+      
+      // Vérifier si le professeur est déjà occupé à un autre cours (nouvelle vérification)
+      const professeurOccupe = creneauxEtapeActuelle.some(creneau =>
+        creneau.jour === jour &&
+        parseInt(creneau.heureDebut) === (heure + i) &&
+        creneau.professeur.id === filtres.professeur?.id // Vérifier si le professeur est déjà occupé
+      );
+
+      if (professeurOccupe) {
+        return false; // Le professeur est déjà occupé à ce moment
       }
       
       if (heure + i >= 22) {
@@ -99,7 +116,7 @@ const Calendrier = () => {
   };
 
   const tousLesFiltresSelectionnes = () => {
-    return filtres.professeur && filtres.cours && filtres.modeCours && filtres.etape && filtres.duree;
+    return filtres.professeur && filtres.cours && filtres.groupe && filtres.modeCours && filtres.etape && filtres.duree;
   };
 
   const creerCreneauxConsecutifs = (jour, heureDebut, heuresConsecutives, professeur) => {
@@ -112,6 +129,7 @@ const Calendrier = () => {
         heureFin: `${heureDebut + i + 1}:00`,
         professeur,
         cours: filtres.cours,
+        groupe: filtres.groupe,
         modeCours: filtres.modeCours,
         etape: filtres.etape,
         couleur: couleursProfesseurs[professeur.id]
@@ -124,6 +142,7 @@ const Calendrier = () => {
     setFiltres({
       professeur: null,
       cours: null,
+      groupe: null,
       modeCours: null,
       etape: null,
       duree: null
@@ -132,6 +151,11 @@ const Calendrier = () => {
   };
 
   const gererClicCreneau = (jour, heure) => {
+    if (!estAuthentifie) {
+      alert('Vous devez être authentifié en tant qu\'administrateur pour créer un horaire.');
+      return;
+    }
+    
     if (!tousLesFiltresSelectionnes()) {
       alert('Veuillez sélectionner tous les critères avant d\'attribuer une disponibilité');
       return;
@@ -146,6 +170,21 @@ const Calendrier = () => {
     
     if (!estCreneauDisponible(jour, heure, heuresConsecutives)) {
       alert('Cette plage horaire n\'est pas disponible pour le nombre d\'heures demandé');
+      return;
+    }
+
+    // Vérifier la limite de 3 heures par semaine pour ce professeur, ce cours et ce groupe
+    if (!validerLimiteCoursProfesseur(
+      creneauxParEtape,
+      etapeVueSelectionnee,
+      filtres.professeur,
+      filtres.cours,
+      filtres.groupe,
+      jour,
+      heure,
+      heuresConsecutives
+    )) {
+      alert('Un professeur ne peut pas donner le même cours plus de 3 heures par semaine au même groupe.');
       return;
     }
 
@@ -235,6 +274,7 @@ const Calendrier = () => {
               heureFin={creneau.heureFin}
               professeur={creneau.professeur}
               cours={creneau.cours}
+              groupe={creneau.groupe}
               modeCours={creneau.modeCours}
               consecutifs={creneau.consecutifs}
               couleur={creneau.couleur}
@@ -253,6 +293,7 @@ const Calendrier = () => {
         heureFin={creneau.heureFin}
         professeur={creneau.professeur}
         cours={creneau.cours}
+        groupe={creneau.groupe}
         modeCours={creneau.modeCours}
         consecutifs={creneau.consecutifs}
         couleur={creneau.couleur}
@@ -282,7 +323,7 @@ const Calendrier = () => {
         {etapeVueSelectionnee && !tousLesFiltresSelectionnes() && (
           <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <p className="text-yellow-800">
-              Veuillez sélectionner tous les critères (Code Professeur, Code Cours, Mode d'enseignement, Étapes, Durée) avant d'attribuer une disponibilité.
+              Veuillez sélectionner tous les critères (Code Professeur, Code Cours, Groupe, Mode d'enseignement, Étapes, Durée) avant d'attribuer une disponibilité.
             </p>
           </div>
         )}
@@ -339,6 +380,15 @@ const Calendrier = () => {
                   <p className="text-sm font-medium text-gray-800 flex items-center">
                     <span className="mr-1">{creneauSelectionne.modeCours.icone}</span>
                     {creneauSelectionne.modeCours.nom}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Users className="w-4 h-4 text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-800">
+                    Groupe {creneauSelectionne.groupe}
                   </p>
                 </div>
               </div>
