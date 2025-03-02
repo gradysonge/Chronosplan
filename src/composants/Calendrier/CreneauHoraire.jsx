@@ -1,12 +1,12 @@
 import React from 'react';
 import { Trash2, Info } from 'lucide-react';
 
-const TimeSlot = ({ startTime, endTime, professor, course, courseMode, consecutive, color, onDelete, onClick }) => {
+const CreneauHoraire = ({ heureDebut, heureFin, professeur, cours, groupe, modeCours, consecutifs, couleur, onSupprimer, onClick }) => {
   return (
     <div
-      className={`rounded-lg p-2 mb-1 ${color.bg} transition-transform hover:scale-[1.02] group relative cursor-pointer`}
+      className={`rounded-lg p-2 mb-1 ${couleur.bg} transition-transform hover:scale-[1.02] group relative cursor-pointer`}
       style={{ 
-        height: consecutive > 1 ? `${consecutive * 5}rem` : 'auto',
+        height: consecutifs > 1 ? `${consecutifs * 5}rem` : 'auto',
         maxHeight: '100%'
       }}
       onClick={(e) => {
@@ -16,28 +16,30 @@ const TimeSlot = ({ startTime, endTime, professor, course, courseMode, consecuti
     >
       <div className="flex justify-between items-start mb-1">
         <span className="text-xs font-medium">
-          {startTime} - {endTime}
+          {heureDebut} - {heureFin}
         </span>
-        {consecutive > 1 && (
-          <span className={`text-xs ${color.badge} text-white px-2 py-0.5 rounded`}>
-            {consecutive}h
+        {consecutifs > 1 && (
+          <span className={`text-xs ${couleur.badge} text-white px-2 py-0.5 rounded`}>
+            {consecutifs}h
           </span>
         )}
       </div>
       <div className="flex flex-col gap-1">
         <div className="flex items-center">
           <img
-            src={professor.avatar}
-            alt={professor.name}
+            src={professeur.avatar}
+            alt={professeur.nom}
             className="w-5 h-5 rounded-full mr-1"
           />
-          <span className="text-xs">{professor.name}</span>
+          <span className="text-xs">{professeur.nom}</span>
         </div>
         <div className="text-xs text-gray-600">
           <div className="flex items-center gap-1">
-            <span>{course.code}</span>
+            <span>{cours.code}</span>
             <span className="text-gray-400">•</span>
-            <span>{courseMode.icon}</span>
+            <span>{modeCours.icone}</span>
+            <span className="text-gray-400">•</span>
+            <span>G{groupe}</span>
           </div>
         </div>
       </div>
@@ -46,7 +48,7 @@ const TimeSlot = ({ startTime, endTime, professor, course, courseMode, consecuti
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onDelete();
+            onSupprimer();
           }}
           className="p-1 rounded-full bg-white/0 hover:bg-white/50 opacity-0 group-hover:opacity-100 transition-all duration-200"
           title="Supprimer ce créneau"
@@ -58,4 +60,4 @@ const TimeSlot = ({ startTime, endTime, professor, course, courseMode, consecuti
   );
 };
 
-export default TimeSlot
+export default CreneauHoraire;

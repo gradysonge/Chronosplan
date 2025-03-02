@@ -1,43 +1,46 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AuthProvider, useAuth } from './components/Calendar/Authentification';
-import Sidebar from './components/Sidebar';
-import Professors from './components/Professors';
-import Calendar from './components/Calendar/Calendar';
-import Connexion from './components/Calendar/Connexion';
+import { AuthProvider, useAuth } from './contexte/Authentification';
+import BarreLaterale from './composants/BarreLaterale';
+import Calendrier from './composants/Calendrier/Calendrier';
+import GestionCours from './composants/GestionCours';
+import GestionProfesseurs from './composants/GestionProfesseurs';
+import Connexion from './composants/Connexion';
 
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? children : <Navigate to="/connexion" />;
+const RouteProtegee = ({ children }) => {
+  const { estAuthentifie } = useAuth();
+  return estAuthentifie ? children : <Navigate to="/connexion" />;
 };
 
 const Layout = ({ children }) => {
   const location = useLocation();
-  const hideSidebar = location.pathname === "/connexion";
+  const masquerBarreLaterale = location.pathname === "/connexion";
 
   return (
-      <div style={{ display: "flex", width: "100vw", height: "100vh", overflow: "hidden" }}>
-        {!hideSidebar && <Sidebar />}
-        <div style={{ flex: 1, padding: "20px", overflow: "auto" }}>{children}</div>
-      </div>
+    <div className="flex h-screen bg-gray-100 overflow-hidden">
+      {!masquerBarreLaterale && <BarreLaterale />}
+      <main className="flex-1 overflow-hidden">
+        {children}
+      </main>
+    </div>
   );
 };
 
-
 function App() {
   return (
-      <AuthProvider>
-        <Router>
-          <Layout>
-            <Routes>
-              <Route path="/connexion" element={<Connexion />} />
-              <Route path="/" element={<div>Dashboard à développer plus tard</div>} />
-              <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
-              <Route path="/professors" element={<ProtectedRoute><Professors /></ProtectedRoute>} />
-            </Routes>
-          </Layout>
-        </Router>
-      </AuthProvider>
+    <AuthProvider>
+      <Router>
+        <Layout>
+          <Routes>
+            <Route path="/connexion" element={<Connexion />} />
+            <Route path="/" element={<div>Tableau de bord</div>} />
+            <Route path="/calendrier" element={<RouteProtegee><Calendrier /></RouteProtegee>} />
+            <Route path="/professeurs" element={<RouteProtegee><GestionProfesseurs /></RouteProtegee>} />
+            <Route path="/cours" element={<RouteProtegee><GestionCours /></RouteProtegee>} />
+          </Routes>
+        </Layout>
+      </Router>
+    </AuthProvider>
   );
 }
 
