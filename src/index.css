@@ -1,3 +1,103 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f3f4f6;
+  font-family: Arial, sans-serif;
+  margin: 0;
+}
+
+.login-page .container {
+  display: flex;
+  max-width: 800px;
+  width: 100%;
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.login-page .left {
+  background: #047857;
+  color: white;
+  padding: 40px;
+  text-align: center;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.login-page .right {
+  padding: 40px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.login-page h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.login-page h2 {
+  margin: 0 0 10px 0;
+  font-size: 1.5rem;
+}
+
+.login-page p {
+  margin: 10px 0;
+  color: #666;
+}
+
+.login-page .input-field {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.login-page .btn {
+  width: 100%;
+  padding: 10px;
+  background: #047857;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.login-page .btn:hover {
+  background: #065f46;
+}
+
+.login-page a {
+  color: #047857;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.login-page .error-message {
+  color: red;
+  font-size: 0.9rem;
+  margin-top: 10px;
+}
+
+.login-page .icon-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.login-page .login-icon {
+  width: 90px; /* Réduit la taille de l'image */
+  height: 90px;
+  object-fit: contain;
+}
