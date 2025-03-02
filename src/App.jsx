@@ -1,19 +1,21 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Sidebar from './components/Sidebar';
-import Professors from './components/Professors';
-import Calendar from './components/Calendar/Calendar';
+import BarreLaterale from './composants/BarreLaterale';
+import Calendrier from './composants/Calendrier/Calendrier';
+import GestionCours from './composants/GestionCours';
+import GestionProfesseurs from './composants/GestionProfesseurs';
 
 function App() {
   return (
     <Router>
       <div className="flex h-screen bg-gray-100 overflow-hidden">
-        <Sidebar />
+        <BarreLaterale />
         <main className="flex-1 overflow-hidden">
           <Routes>
-            <Route path="/" element={<div>Dashboard  a developper plus tard </div>} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/professors" element={<Professors/>} />
+            <Route path="/" element={<div>Tableau de bord</div>} />
+            <Route path="/calendrier" element={<Calendrier />} />
+            <Route path="/professeurs" element={<GestionProfesseurs />} />
+            <Route path="/cours" element={<GestionCours />} />
           </Routes>
         </main>
       </div>
