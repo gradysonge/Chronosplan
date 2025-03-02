@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexte/Authentification';
-import '../styles/Connexion.css';
+import '../index.css';
+import userImage from '../assets/images.png';
 
 const Connexion = () => {
   const [email, setEmail] = useState('');
@@ -14,8 +15,8 @@ const Connexion = () => {
     e.preventDefault();
 
     // Compte administrateur par défaut
-    const adminEmail = 'LaCite@chronosplan.com';
-    const adminPassword = 'CollegeLacite870';
+    const adminEmail = 'Admin@lacite.ca';
+    const adminPassword = 'Admin';
 
     if (email === adminEmail && password === adminPassword) {
       setEstAuthentifie(true); // Authentification réussie
@@ -30,14 +31,17 @@ const Connexion = () => {
       <div className="container">
         <div className="left">
           <h1>ChronosPlan</h1>
-          <h1>Bienvenue!!!</h1>
+          <h1></h1>
+          <h1>Bienvenue!</h1>
         </div>
         <div className="right">
           <div className="icon-container">
-            <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="User Icon" className="login-icon" />
+          <img src={userImage} alt="User Icon" className="login-icon" />
+
+
           </div>
-          <h2>Connexion</h2>
-          <p>Connectez-vous à votre compte pour continuer</p>
+
+          <p>Connectez-vous à votre compte</p>
           <form onSubmit={handleConnexion}>
             <input
               type="email"
