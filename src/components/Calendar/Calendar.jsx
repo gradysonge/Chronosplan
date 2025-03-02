@@ -1,17 +1,17 @@
 import React, { useState, useContext } from 'react';
-import CalendarHeader from './CalendarHeader';
-import TimeSlot from './TimeSlot';
-import StepSelector from './StepSelector';
-import ProfessorStats from './ProfessorStats';
-import { AuthContext } from './Authentification';
-import { professors } from '../../data/mockData';
-import { X, Clock, BookOpen, Users, Monitor } from 'lucide-react';
-import { validateProfessorCourseLimit } from './Contraintes';
+import EnTeteCalendrier from './EnTeteCalendrier';
+import CreneauHoraire from './CreneauHoraire';
+import SelecteurEtape from './SelecteurEtape';
+import StatistiquesProfesseur from './StatistiquesProfesseur';
+import { ContexteAuth } from '../../contexte/Authentification';
+import { professeurs } from '../../donnees/donneesMock';
+import { X, Clock, BookOpen, Users, Monitor, Blend } from 'lucide-react';
+import { validerLimiteCoursProfesseur } from '../../utils/Contraintes';
 
-const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
-const hours = Array.from({ length: 15 }, (_, i) => i + 8);
+const joursDelaSemaine = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
+const heures = Array.from({ length: 15 }, (_, i) => i + 8); // 8:00 to 22:00
 
-const professorColors = {
+const couleursProfesseurs = {
   P1: { bg: 'bg-blue-100 hover:bg-blue-200', badge: 'bg-blue-500' },
   P2: { bg: 'bg-green-100 hover:bg-green-200', badge: 'bg-green-500' },
   P3: { bg: 'bg-purple-100 hover:bg-purple-200', badge: 'bg-purple-500' },
@@ -24,425 +24,434 @@ const professorColors = {
   P10: { bg: 'bg-cyan-100 hover:bg-cyan-200', badge: 'bg-cyan-500' },
 };
 
-const Calendar = () => {
-  const { isAuthenticated } = useContext(AuthContext);
-  const [slotsByStep, setSlotsByStep] = useState({});
-  const [filters, setFilters] = useState({
-    professor: null,
-    course: null,
-    courseMode: null,
-    step: null,
-    token: null
+const Calendrier = () => {
+  const { estAuthentifie } = useContext(ContexteAuth);
+  const [creneauxParEtape, setCreneauxParEtape] = useState({});
+  const [filtres, setFiltres] = useState({
+    professeur: null,
+    cours: null,
+    groupe: null,
+    modeCours: null,
+    etape: null,
+    duree: null
   });
-  const [selectedViewStep, setSelectedViewStep] = useState(null);
-  const [hoveredSlot, setHoveredSlot] = useState(null);
-  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [etapeVueSelectionnee, setEtapeVueSelectionnee] = useState(null);
+  const [creneauSurvole, setCreneauSurvole] = useState(null);
+  const [creneauSelectionne, setCreneauSelectionne] = useState(null);
 
-  const groupConsecutiveSlots = (slots) => {
-    const grouped = [];
-    let currentGroup = null;
+  const regrouperCreneauxConsecutifs = (creneaux) => {
+    const regroupes = [];
+    let groupeCourant = null;
 
-    slots.forEach((slot) => {
-      if (!currentGroup ||
-          currentGroup.professor.id !== slot.professor.id ||
-          currentGroup.day !== slot.day ||
-          parseInt(slot.startTime) !== parseInt(currentGroup.endTime)) {
-        if (currentGroup) {
-          grouped.push(currentGroup);
+    creneaux.forEach((creneau) => {
+      if (!groupeCourant || 
+          groupeCourant.professeur.id !== creneau.professeur.id ||
+          groupeCourant.jour !== creneau.jour ||
+          parseInt(creneau.heureDebut) !== parseInt(groupeCourant.heureFin)) {
+        if (groupeCourant) {
+          regroupes.push(groupeCourant);
         }
-        currentGroup = {
-          ...slot,
-          consecutive: 1,
-          originalEndTime: slot.endTime
+        groupeCourant = {
+          ...creneau,
+          consecutifs: 1,
+          heureFinOriginale: creneau.heureFin
         };
       } else {
-        currentGroup.consecutive++;
-        currentGroup.endTime = slot.endTime;
+        groupeCourant.consecutifs++;
+        groupeCourant.heureFin = creneau.heureFin;
       }
     });
 
-    if (currentGroup) {
-      grouped.push(currentGroup);
+    if (groupeCourant) {
+      regroupes.push(groupeCourant);
     }
 
-    return grouped;
+    return regroupes;
   };
 
-  const handleFilterChange = (newFilters) => {
-    setFilters({ ...filters, ...newFilters });
-    if (newFilters.step) {
-      setSelectedViewStep(newFilters.step);
+  const gererChangementFiltre = (nouveauxFiltres) => {
+    setFiltres({ ...filtres, ...nouveauxFiltres });
+    if (nouveauxFiltres.etape) {
+      setEtapeVueSelectionnee(nouveauxFiltres.etape);
     }
   };
 
-  const isSlotAvailable = (day, hour, consecutiveHours = 1) => {
-    const currentStepSlots = slotsByStep[selectedViewStep?.id] || [];
-
-    for (let i = 0; i < consecutiveHours; i++) {
+  const estCreneauDisponible = (jour, heure, heuresConsecutives = 1) => {
+    const creneauxEtapeActuelle = creneauxParEtape[etapeVueSelectionnee?.id] || [];
+    
+    for (let i = 0; i < heuresConsecutives; i++) {
       // Vérifier les conflits de cours (logique existante)
-      const conflictingSlots = currentStepSlots.filter(slot =>
-          slot.day === day &&
-          parseInt(slot.startTime) === (hour + i) &&
-          slot.course.code === filters.course?.code
+      const creneauxConflictuels = creneauxEtapeActuelle.filter(creneau => 
+        creneau.jour === jour && 
+        parseInt(creneau.heureDebut) === (heure + i) &&
+        creneau.cours.code === filtres.cours?.code
       );
 
-      if (conflictingSlots.length >= 2) {
+      if (creneauxConflictuels.length >= 2) {
         return false; // Deux cours identiques ne peuvent pas être programmés en même temps
       }
 
       // Vérifier le mode d'enseignement (logique existante)
-      const sameMode = conflictingSlots.find(slot => slot.courseMode.id === filters.courseMode?.id);
-      if (sameMode) {
-        return false; // Le même mode d'enseignement ne peut pas être utilisé en même temps
+      const memeModeEnseignement = creneauxConflictuels.find(creneau => creneau.modeCours.id === filtres.modeCours?.id);
+      if (memeModeEnseignement) {
+        return false;
       }
-
+      
       // Vérifier si le professeur est déjà occupé à un autre cours (nouvelle vérification)
-      const professorOccupied = currentStepSlots.some(slot =>
-          slot.day === day &&
-          parseInt(slot.startTime) === (hour + i) &&
-          slot.professor.id === filters.professor?.id // Vérifier si le professeur est déjà occupé
+      const professeurOccupe = creneauxEtapeActuelle.some(creneau =>
+        creneau.jour === jour &&
+        parseInt(creneau.heureDebut) === (heure + i) &&
+        creneau.professeur.id === filtres.professeur?.id // Vérifier si le professeur est déjà occupé
       );
 
-      if (professorOccupied) {
+      if (professeurOccupe) {
         return false; // Le professeur est déjà occupé à ce moment
       }
-
-      // Vérifier l'heure maximale (logique existante)
-      if (hour + i >= 22) {
-        return false; // Le créneau ne peut pas dépasser 22h
+      
+      if (heure + i >= 22) {
+        return false;
       }
     }
-
-    return true; // Le créneau est disponible
+    return true;
   };
 
-  const areAllFiltersSelected = () => {
-    return filters.professor && filters.course && filters.courseMode && filters.step && filters.token;
+  const tousLesFiltresSelectionnes = () => {
+    return filtres.professeur && filtres.cours && filtres.groupe && filtres.modeCours && filtres.etape && filtres.duree;
   };
 
-  const createConsecutiveSlots = (day, startHour, consecutiveHours, professor) => {
-    const newSlots = [];
-    for (let i = 0; i < consecutiveHours; i++) {
-      newSlots.push({
-        id: `${day}-${startHour + i}-${professor.id}-${Date.now()}`,
-        day,
-        startTime: `${startHour + i}:00`,
-        endTime: `${startHour + i + 1}:00`,
-        professor,
-        course: filters.course,
-        courseMode: filters.courseMode,
-        step: filters.step,
-        group: filters.group, // Ajouter le groupe
-        color: professorColors[professor.id]
+  const creerCreneauxConsecutifs = (jour, heureDebut, heuresConsecutives, professeur) => {
+    const nouveauxCreneaux = [];
+    for (let i = 0; i < heuresConsecutives; i++) {
+      nouveauxCreneaux.push({
+        id: `${jour}-${heureDebut + i}-${professeur.id}-${Date.now()}`,
+        jour,
+        heureDebut: `${heureDebut + i}:00`,
+        heureFin: `${heureDebut + i + 1}:00`,
+        professeur,
+        cours: filtres.cours,
+        groupe: filtres.groupe,
+        modeCours: filtres.modeCours,
+        etape: filtres.etape,
+        couleur: couleursProfesseurs[professeur.id]
       });
     }
-    return newSlots;
+    return nouveauxCreneaux;
   };
 
-  const resetFilters = () => {
-    setFilters({
-      professor: null,
-      course: null,
-      courseMode: null,
-      step: null,
-      token: null
+  const reinitialiserFiltres = () => {
+    setFiltres({
+      professeur: null,
+      cours: null,
+      groupe: null,
+      modeCours: null,
+      etape: null,
+      duree: null
     });
-    setHoveredSlot(null);
+    setCreneauSurvole(null);
   };
 
-  const handleSlotClick = (day, hour) => {
-    if (!isAuthenticated) {
+  const gererClicCreneau = (jour, heure) => {
+    if (!estAuthentifie) {
       alert('Vous devez être authentifié en tant qu\'administrateur pour créer un horaire.');
       return;
     }
-    if (!areAllFiltersSelected()) {
+    
+    if (!tousLesFiltresSelectionnes()) {
       alert('Veuillez sélectionner tous les critères avant d\'attribuer une disponibilité');
       return;
     }
 
-    if (!selectedViewStep) {
+    if (!etapeVueSelectionnee) {
       alert('Veuillez sélectionner une étape pour l\'affichage');
       return;
     }
 
-    const consecutiveHours = filters.token?.id || 1;
-
-    // Vérifier si le créneau est disponible pour le professeur
-    if (!isSlotAvailable(day, hour, consecutiveHours)) {
-      alert('Le professeur est déjà occupé à ce moment.');
+    const heuresConsecutives = filtres.duree?.id || 1;
+    
+    if (!estCreneauDisponible(jour, heure, heuresConsecutives)) {
+      alert('Cette plage horaire n\'est pas disponible pour le nombre d\'heures demandé');
       return;
     }
 
     // Vérifier la limite de 3 heures par semaine pour ce professeur, ce cours et ce groupe
-    if (!validateProfessorCourseLimit(
-        slotsByStep,
-        selectedViewStep,
-        filters.professor,
-        filters.course,
-        filters.group,
-        day,
-        hour,
-        consecutiveHours
+    if (!validerLimiteCoursProfesseur(
+      creneauxParEtape,
+      etapeVueSelectionnee,
+      filtres.professeur,
+      filtres.cours,
+      filtres.groupe,
+      jour,
+      heure,
+      heuresConsecutives
     )) {
       alert('Un professeur ne peut pas donner le même cours plus de 3 heures par semaine au même groupe.');
       return;
     }
 
-    // Créer les créneaux horaires
-    const newSlots = createConsecutiveSlots(day, hour, consecutiveHours, filters.professor);
-
-    // Mettre à jour les créneaux pour l'étape sélectionnée
-    setSlotsByStep(prev => ({
+    const nouveauxCreneaux = creerCreneauxConsecutifs(jour, heure, heuresConsecutives, filtres.professeur);
+    
+    setCreneauxParEtape(prev => ({
       ...prev,
-      [selectedViewStep.id]: [...(prev[selectedViewStep.id] || []), ...newSlots]
+      [etapeVueSelectionnee.id]: [...(prev[etapeVueSelectionnee.id] || []), ...nouveauxCreneaux]
     }));
 
-    resetFilters();
+    reinitialiserFiltres();
   };
 
-  const handleStepChange = (step) => {
-    setSelectedViewStep(step);
-    resetFilters();
-    setSelectedSlot(null);
+  const gererChangementEtape = (etape) => {
+    setEtapeVueSelectionnee(etape);
+    reinitialiserFiltres();
+    setCreneauSelectionne(null);
   };
 
-  const handleSlotDelete = (slotId) => {
+  const gererSuppressionCreneau = (creneauId) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce créneau ?')) {
-      setSlotsByStep(prev => {
-        const updatedSlots = { ...prev };
-        Object.keys(updatedSlots).forEach(stepId => {
-          updatedSlots[stepId] = updatedSlots[stepId].filter(slot => slot.id !== slotId);
+      setCreneauxParEtape(prev => {
+        const creneauxMisAJour = { ...prev };
+        Object.keys(creneauxMisAJour).forEach(etapeId => {
+          creneauxMisAJour[etapeId] = creneauxMisAJour[etapeId].filter(creneau => creneau.id !== creneauId);
         });
-        return updatedSlots;
+        return creneauxMisAJour;
       });
-      setSelectedSlot(null);
+      setCreneauSelectionne(null);
     }
   };
 
-  const currentStepSlots = selectedViewStep ? (slotsByStep[selectedViewStep.id] || []) : [];
-  const groupedTimeSlots = groupConsecutiveSlots(currentStepSlots);
+  const creneauxEtapeActuelle = etapeVueSelectionnee ? (creneauxParEtape[etapeVueSelectionnee.id] || []) : [];
+  const creneauxHorairesGroupes = regrouperCreneauxConsecutifs(creneauxEtapeActuelle);
 
-  const visibleHours = filters.token
-      ? hours.filter(hour => {
-        const consecutiveHours = filters.token.id;
-        return hour + consecutiveHours <= 22;
+  const heuresVisibles = filtres.duree 
+    ? heures.filter(heure => {
+        const heuresConsecutives = filtres.duree.id;
+        return heure + heuresConsecutives <= 22;
       })
-      : hours;
+    : heures;
 
-  const isSlotInPreview = (day, hour) => {
-    if (!hoveredSlot || !filters.token) return false;
-    const { day: hoverDay, hour: hoverHour } = hoveredSlot;
-    const tokenCount = filters.token.id;
-
-    return day === hoverDay &&
-        hour >= hoverHour &&
-        hour < (hoverHour + tokenCount);
+  const estCreneauEnApercu = (jour, heure) => {
+    if (!creneauSurvole || !filtres.duree) return false;
+    const { jour: jourSurvole, heure: heureSurvole } = creneauSurvole;
+    const nombreDuree = filtres.duree.id;
+    
+    return jour === jourSurvole && 
+           heure >= heureSurvole && 
+           heure < (heureSurvole + nombreDuree);
   };
 
-  const getSlotBackgroundColor = (day, hour, isAvailable, canSelect, isPreview) => {
-    const existingSlot = currentStepSlots.find(
-        slot => slot.day === day && parseInt(slot.startTime) === hour
+  const obtenirCouleurFondCreneau = (jour, heure, estDisponible, peutSelectionner, estApercu) => {
+    const creneauExistant = creneauxEtapeActuelle.find(
+      creneau => creneau.jour === jour && parseInt(creneau.heureDebut) === heure
     );
 
-    if (existingSlot) {
-      return existingSlot.color.bg;
+    if (creneauExistant) {
+      return creneauExistant.couleur.bg;
     }
 
-    if (isPreview && filters.professor) {
-      return professorColors[filters.professor.id].bg;
+    if (estApercu && filtres.professeur) {
+      return couleursProfesseurs[filtres.professeur.id].bg;
     }
 
-    if (!canSelect) {
+    if (!peutSelectionner) {
       return 'bg-gray-50';
     }
 
     return '';
   };
 
-  const renderTimeSlots = (day, hour) => {
-    const slots = groupedTimeSlots.filter(
-        slot => slot.day === day && parseInt(slot.startTime) === hour
+  const rendreCreneauxHoraires = (jour, heure) => {
+    const creneaux = creneauxHorairesGroupes.filter(
+      creneau => creneau.jour === jour && parseInt(creneau.heureDebut) === heure
     );
 
-    if (slots.length === 0) return null;
+    if (creneaux.length === 0) return null;
 
-    if (slots.length === 2) {
+    if (creneaux.length === 2) {
       return (
-          <div className="grid grid-cols-2 gap-1 h-full">
-            {slots.map((slot) => (
-                <TimeSlot
-                    key={slot.id}
-                    startTime={slot.startTime}
-                    endTime={slot.endTime}
-                    professor={slot.professor}
-                    course={slot.course}
-                    courseMode={slot.courseMode}
-                    consecutive={slot.consecutive}
-                    color={slot.color}
-                    onDelete={() => handleSlotDelete(slot.id)}
-                    onClick={() => setSelectedSlot(slot)}
-                />
-            ))}
-          </div>
+        <div className="grid grid-cols-2 gap-1 h-full">
+          {creneaux.map((creneau) => (
+            <CreneauHoraire
+              key={creneau.id}
+              heureDebut={creneau.heureDebut}
+              heureFin={creneau.heureFin}
+              professeur={creneau.professeur}
+              cours={creneau.cours}
+              groupe={creneau.groupe}
+              modeCours={creneau.modeCours}
+              consecutifs={creneau.consecutifs}
+              couleur={creneau.couleur}
+              onSupprimer={() => gererSuppressionCreneau(creneau.id)}
+              onClick={() => setCreneauSelectionne(creneau)}
+            />
+          ))}
+        </div>
       );
     }
 
-    return slots.map((slot) => (
-        <TimeSlot
-            key={slot.id}
-            startTime={slot.startTime}
-            endTime={slot.endTime}
-            professor={slot.professor}
-            course={slot.course}
-            courseMode={slot.courseMode}
-            consecutive={slot.consecutive}
-            color={slot.color}
-            onDelete={() => handleSlotDelete(slot.id)}
-            onClick={() => setSelectedSlot(slot)}
-        />
+    return creneaux.map((creneau) => (
+      <CreneauHoraire
+        key={creneau.id}
+        heureDebut={creneau.heureDebut}
+        heureFin={creneau.heureFin}
+        professeur={creneau.professeur}
+        cours={creneau.cours}
+        groupe={creneau.groupe}
+        modeCours={creneau.modeCours}
+        consecutifs={creneau.consecutifs}
+        couleur={creneau.couleur}
+        onSupprimer={() => gererSuppressionCreneau(creneau.id)}
+        onClick={() => setCreneauSelectionne(creneau)}
+      />
     ));
   };
 
   return (
-      <div className="h-screen flex flex-col overflow-hidden">
-        <div className="flex-none p-6">
-          <CalendarHeader onFilterChange={handleFilterChange} filters={filters} />
-          <StepSelector
-              selectedStep={selectedViewStep}
-              onStepChange={handleStepChange}
-          />
+    <div className="h-screen flex flex-col overflow-hidden">
+      <div className="flex-none p-6">
+        <EnTeteCalendrier onChangementFiltre={gererChangementFiltre} filtres={filtres} />
+        <SelecteurEtape
+          etapeSelectionnee={etapeVueSelectionnee}
+          onChangementEtape={gererChangementEtape}
+        />
+        
+        {!etapeVueSelectionnee && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-yellow-800">
+              Veuillez sélectionner une étape pour afficher ou modifier l'emploi du temps correspondant.
+            </p>
+          </div>
+        )}
+        
+        {etapeVueSelectionnee && !tousLesFiltresSelectionnes() && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-yellow-800">
+              Veuillez sélectionner tous les critères (Code Professeur, Code Cours, Groupe, Mode d'enseignement, Étapes, Durée) avant d'attribuer une disponibilité.
+            </p>
+          </div>
+        )}
 
-          {!selectedViewStep && (
-              <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-yellow-800">
-                  Veuillez sélectionner une étape pour afficher ou modifier l'emploi du temps correspondant.
-                </p>
+        {creneauSelectionne && (
+          <div className="mb-4 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2 border-b bg-gray-50">
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${creneauSelectionne.couleur.badge}`} />
+                <h3 className="text-sm font-medium text-gray-700">Détails de la réservation</h3>
               </div>
-          )}
-
-          {selectedViewStep && !areAllFiltersSelected() && (
-              <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-yellow-800">
-                  Veuillez sélectionner tous les critères (Code Professeur, Code Cours, Mode d'enseignement, Étapes, Token shift) avant d'attribuer une disponibilité.
-                </p>
-              </div>
-          )}
-
-          {selectedSlot && (
-              <div className="mb-4 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-2 border-b bg-gray-50">
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-2 h-2 rounded-full ${selectedSlot.color.badge}`} />
-                    <h3 className="text-sm font-medium text-gray-700">Détails de la réservation</h3>
+              <button
+                onClick={() => setCreneauSelectionne(null)}
+                className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+              >
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+            <div className="p-3 flex items-center space-x-6">
+              <div className="flex items-center space-x-2">
+                <Users className="w-4 h-4 text-gray-400" />
+                <div className="flex items-center">
+                  <img
+                    src={creneauSelectionne.professeur.avatar}
+                    alt={creneauSelectionne.professeur.nom}
+                    className="w-6 h-6 rounded-full mr-2"
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">{creneauSelectionne.professeur.nom}</p>
+                    <p className="text-xs text-gray-500">{creneauSelectionne.professeur.code}</p>
                   </div>
-                  <button
-                      onClick={() => setSelectedSlot(null)}
-                      className="p-1 hover:bg-gray-200 rounded-full transition-colors"
-                  >
-                    <X className="w-4 h-4 text-gray-500" />
-                  </button>
                 </div>
-                <div className="p-3 flex items-center space-x-6">
-                  <div className="flex items-center space-x-2">
-                    <Users className="w-4 h-4 text-gray-400" />
-                    <div className="flex items-center">
-                      <img
-                          src={selectedSlot.professor.avatar}
-                          alt={selectedSlot.professor.name}
-                          className="w-6 h-6 rounded-full mr-2"
-                      />
-                      <div>
-                        <p className="text-sm font-medium text-gray-800">{selectedSlot.professor.name}</p>
-                        <p className="text-xs text-gray-500">{selectedSlot.professor.code}</p>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <BookOpen className="w-4 h-4 text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-800">{creneauSelectionne.cours.code}</p>
+                  <p className="text-xs text-gray-500">{creneauSelectionne.cours.nom}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Clock className="w-4 h-4 text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-800">{creneauSelectionne.jour}</p>
+                  <p className="text-xs text-gray-500">{creneauSelectionne.heureDebut} - {creneauSelectionne.heureFin}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Monitor className="w-4 h-4 text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-800 flex items-center">
+                    <span className="mr-1">{creneauSelectionne.modeCours.icone}</span>
+                    {creneauSelectionne.modeCours.nom}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Users className="w-4 h-4 text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-800">
+                    Groupe {creneauSelectionne.groupe}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      <div className="flex-1 overflow-hidden px-6 pb-6">
+        <div className="flex h-full">
+          <StatistiquesProfesseur creneauxParEtape={creneauxParEtape} />
+          
+          <div className="flex-1 bg-white rounded-lg shadow-sm overflow-auto">
+            <div className="sticky top-0 z-10 bg-white grid grid-cols-5 border-b">
+              {joursDelaSemaine.map((jour) => (
+                <div
+                  key={jour}
+                  className="px-4 py-3 text-center font-semibold text-gray-700 border-r last:border-r-0"
+                >
+                  {jour}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-5">
+              {joursDelaSemaine.map((jour) => (
+                <div key={jour} className="border-r last:border-r-0">
+                  {heuresVisibles.map((heure) => {
+                    const heuresConsecutives = filtres.duree?.id || 1;
+                    const estDisponible = estCreneauDisponible(jour, heure, heuresConsecutives);
+                    const peutSelectionner = etapeVueSelectionnee && tousLesFiltresSelectionnes() && estDisponible;
+                    const estApercu = estCreneauEnApercu(jour, heure);
+                    const couleurFond = obtenirCouleurFondCreneau(jour, heure, estDisponible, peutSelectionner, estApercu);
+
+                    return (
+                      <div
+                        key={heure}
+                        className={`h-24 border-b last:border-b-0 p-2 transition-colors duration-150 ${
+                          peutSelectionner ? 'cursor-pointer hover:bg-gray-50' : 'cursor-not-allowed'
+                        } ${couleurFond} ${
+                          estApercu && filtres.professeur
+                            ? `border-2 border-${couleursProfesseurs[filtres.professeur.id].badge.replace('bg-', '')}`
+                            : ''
+                        }`}
+                        onClick={() => gererClicCreneau(jour, heure)}
+                        onMouseEnter={() => peutSelectionner && setCreneauSurvole({ jour, heure })}
+                        onMouseLeave={() => setCreneauSurvole(null)}
+                      >
+                        <div className="text-xs text-gray-500 mb-1">
+                          {`${heure}:00`}
+                        </div>
+                        {rendreCreneauxHoraires(jour, heure)}
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <BookOpen className="w-4 h-4 text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{selectedSlot.course.code}</p>
-                      <p className="text-xs text-gray-500">{selectedSlot.course.name}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{selectedSlot.day}</p>
-                      <p className="text-xs text-gray-500">{selectedSlot.startTime} - {selectedSlot.endTime}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Monitor className="w-4 h-4 text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-800 flex items-center">
-                        <span className="mr-1">{selectedSlot.courseMode.icon}</span>
-                        {selectedSlot.courseMode.name}
-                      </p>
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
-              </div>
-          )}
-        </div>
-
-        <div className="flex-1 overflow-hidden px-6 pb-6">
-          <div className="flex h-full">
-            <ProfessorStats slotsByStep={slotsByStep} />
-
-            <div className="flex-1 bg-white rounded-lg shadow-sm overflow-auto">
-              <div className="sticky top-0 z-10 bg-white grid grid-cols-5 border-b">
-                {daysOfWeek.map((day) => (
-                    <div
-                        key={day}
-                        className="px-4 py-3 text-center font-semibold text-gray-700 border-r last:border-r-0"
-                    >
-                      {day}
-                    </div>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-5">
-                {daysOfWeek.map((day) => (
-                    <div key={day} className="border-r last:border-r-0">
-                      {visibleHours.map((hour) => {
-                        const consecutiveHours = filters.token?.id || 1;
-                        const isAvailable = isSlotAvailable(day, hour, consecutiveHours);
-                        const canSelect = selectedViewStep && areAllFiltersSelected() && isAvailable;
-                        const isPreview = isSlotInPreview(day, hour);
-                        const backgroundColor = getSlotBackgroundColor(day, hour, isAvailable, canSelect, isPreview);
-
-                        return (
-                            <div
-                                key={hour}
-                                className={`h-24 border-b last:border-b-0 p-2 transition-colors duration-150 ${
-                                    canSelect ? 'cursor-pointer hover:bg-gray-50' : 'cursor-not-allowed'
-                                } ${backgroundColor} ${
-                                    isPreview && filters.professor
-                                        ? `border-2 border-${professorColors[filters.professor.id].badge.replace('bg-', '')}`
-                                        : ''
-                                }`}
-                                onClick={() => handleSlotClick(day, hour)}
-                                onMouseEnter={() => canSelect && setHoveredSlot({ day, hour })}
-                                onMouseLeave={() => setHoveredSlot(null)}
-                            >
-                              <div className="text-xs text-gray-500 mb-1">
-                                {`${hour}:00`}
-                              </div>
-                              {renderTimeSlots(day, hour)}
-                            </div>
-                        );
-                      })}
-                    </div>
-                ))}
-              </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
+    </div>
   );
 };
 
-export default Calendar;
+export default Calendrier;
