@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import "./accueil.scss"
 
 import {Link} from 'react-router-dom'
-
+import {Datepicker} from "@mobiscroll/react-lite"
 
 
 
@@ -84,7 +84,10 @@ return(
 
             </div>
             <div className='block_2'>
-   
+            <Datepicker
+                controls={['calendar', 'time']}
+                touchUi={true}
+            />
             </div>
         </div>
     </div>
