@@ -36,7 +36,7 @@ function App() {
           <Routes>
 
             <Route path="/connexion" element={<Connexion />} />
-            <Route path="/" element={<div>Tableau de bord</div>} />
+            <Route path="/" element={<Acceuil/>} />
             <Route path="/calendrier" element={<RouteProtegee><Calendrier /></RouteProtegee>} />
             <Route path="/professeurs" element={<RouteProtegee><GestionProfesseurs /></RouteProtegee>} />
             <Route path="/cours" element={<RouteProtegee><GestionCours /></RouteProtegee>} />
