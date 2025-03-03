@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import "./accueil.scss"
-import { Calendar } from 'lucide-react';
+
 import {Link} from 'react-router-dom'
-import CalendarHeader from '../Calendar/CalendarHeader';
+
 
 
 

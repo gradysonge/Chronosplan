@@ -7,6 +7,7 @@ import Calendrier from './composants/Calendrier/Calendrier';
 import GestionCours from './composants/GestionCours';
 import GestionProfesseurs from './composants/GestionProfesseurs';
 import Connexion from './composants/Connexion';
+import Accueil from './composants/Accueil/Accueil';
 
 const RouteProtegee = ({ children }) => {
   const { estAuthentifie } = useAuth();
@@ -36,7 +37,7 @@ function App() {
           <Routes>
 
             <Route path="/connexion" element={<Connexion />} />
-            <Route path="/" element={<Acceuil/>} />
+            <Route path="/" element={ <Accueil/> } />
             <Route path="/calendrier" element={<RouteProtegee><Calendrier /></RouteProtegee>} />
             <Route path="/professeurs" element={<RouteProtegee><GestionProfesseurs /></RouteProtegee>} />
             <Route path="/cours" element={<RouteProtegee><GestionCours /></RouteProtegee>} />
