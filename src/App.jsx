@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexte/Authentification';
 import BarreLaterale from './composants/BarreLaterale';
@@ -6,6 +7,7 @@ import Calendrier from './composants/Calendrier/Calendrier';
 import GestionCours from './composants/GestionCours';
 import GestionProfesseurs from './composants/GestionProfesseurs';
 import Connexion from './composants/Connexion';
+import Accueil from './composants/Accueil/Accueil';
 
 const RouteProtegee = ({ children }) => {
   const { estAuthentifie } = useAuth();
@@ -26,14 +28,16 @@ const Layout = ({ children }) => {
   );
 };
 
+
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Layout>
           <Routes>
+
             <Route path="/connexion" element={<Connexion />} />
-            <Route path="/" element={<div>Tableau de bord</div>} />
+            <Route path="/" element={ <Accueil/> } />
             <Route path="/calendrier" element={<RouteProtegee><Calendrier /></RouteProtegee>} />
             <Route path="/professeurs" element={<RouteProtegee><GestionProfesseurs /></RouteProtegee>} />
             <Route path="/cours" element={<RouteProtegee><GestionCours /></RouteProtegee>} />
