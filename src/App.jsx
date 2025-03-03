@@ -1,11 +1,5 @@
 import React from 'react';
-<<<<<<< HEAD
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Sidebar from './components/Sidebar';
-import Professors from './components/Professors';
-import Calendar from './components/Calendar/Calendar';
-import Accueil from './components/Accueil/Accueil';
-=======
+
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexte/Authentification';
 import BarreLaterale from './composants/BarreLaterale';
@@ -32,7 +26,7 @@ const Layout = ({ children }) => {
     </div>
   );
 };
->>>>>>> main
+
 
 function App() {
   return (
@@ -40,17 +34,12 @@ function App() {
       <Router>
         <Layout>
           <Routes>
-<<<<<<< HEAD
-            <Route path="/" element={<Accueil/>} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/professors" element={<Professors/>} />
-=======
+
             <Route path="/connexion" element={<Connexion />} />
             <Route path="/" element={<div>Tableau de bord</div>} />
             <Route path="/calendrier" element={<RouteProtegee><Calendrier /></RouteProtegee>} />
             <Route path="/professeurs" element={<RouteProtegee><GestionProfesseurs /></RouteProtegee>} />
             <Route path="/cours" element={<RouteProtegee><GestionCours /></RouteProtegee>} />
->>>>>>> main
           </Routes>
         </Layout>
       </Router>
