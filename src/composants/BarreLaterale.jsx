@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { Calendar, Users, Home, ChevronDown, BookOpen, LogOut, Settings, HelpCircle } from 'lucide-react';
-import { useAuth } from '../contexte/Authentification';
+import React from 'react';
+import { NavLink } from 'react-router-dom';
+import { Calendar, Users, Home, ChevronDown, BookOpen } from 'lucide-react';
 import clsx from 'clsx';
 
 const utilisateur = {
@@ -11,50 +10,18 @@ const utilisateur = {
 };
 
 const BarreLaterale = () => {
-  const [menuUtilisateurOuvert, setMenuUtilisateurOuvert] = useState(false);
-  const { setEstAuthentifie } = useAuth();
-  const navigate = useNavigate();
-
-  const deconnecter = () => {
-    setEstAuthentifie(false);
-    navigate('/connexion');
-  };
-
   return (
     <div className="flex flex-col h-screen bg-emerald-900 text-white w-64 p-4">
       <div className="flex items-center space-x-3 mb-8">
         {utilisateur.avatar && (
           <img src={utilisateur.avatar} alt={utilisateur.nom} className="w-12 h-12 rounded-full" />
         )}
-        <div className="relative">
+        <div>
           <h2 className="font-semibold">{utilisateur.nom}</h2>
-          <button 
-            className="text-sm text-emerald-200 flex items-center"
-            onClick={() => setMenuUtilisateurOuvert(!menuUtilisateurOuvert)}
-          >
+          <span className="text-sm text-emerald-200 flex items-center">
             {utilisateur.role}
-            <ChevronDown className={`w-4 h-4 ml-1 transition-transform ${menuUtilisateurOuvert ? 'rotate-180' : ''}`} />
-          </button>
-          
-          {menuUtilisateurOuvert && (
-            <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-              <button 
-                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                onClick={deconnecter}
-              >
-                <LogOut className="w-4 h-4 mr-2 text-gray-500" />
-                Se déconnecter
-              </button>
-              <button className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                <Settings className="w-4 h-4 mr-2 text-gray-500" />
-                Paramètres
-              </button>
-              <button className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                <HelpCircle className="w-4 h-4 mr-2 text-gray-500" />
-                Aide
-              </button>
-            </div>
-          )}
+            <ChevronDown className="w-4 h-4 ml-1" />
+          </span>
         </div>
       </div>
 
@@ -69,7 +36,7 @@ const BarreLaterale = () => {
           }
         >
           <Home className="w-5 h-5" />
-          <span>Tableau de bord</span>
+          <span>Accueil</span>
         </NavLink>
 
         <NavLink
@@ -111,13 +78,6 @@ const BarreLaterale = () => {
           <span>Cours & Programmes</span>
         </NavLink>
       </nav>
-
-      <div className="mt-auto pt-4 border-t border-emerald-800">
-        <div className="bg-emerald-800/50 rounded-lg p-3 text-sm">
-          <p className="font-medium mb-1">ChronosPlan v1.0</p>
-          <p className="text-emerald-200 text-xs">© 2025 Collège La Cité</p>
-        </div>
-      </div>
     </div>
   );
 };
