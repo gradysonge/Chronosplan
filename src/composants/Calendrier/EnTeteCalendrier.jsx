@@ -106,12 +106,13 @@ const EnTeteCalendrier = ({ onChangementFiltre, filtres }) => {
           typeIcone="book"
         />
         <MenuDeroulant
-          libelle="Groupe"
-          options={coursSelectionne?.groupes || []}
-          valeur={filtres?.groupe || ''}
-          onChange={gererChangementGroupe}
-          typeIcone="users"
-        />
+  libelle="Groupe"
+  options={filtres?.cours ? filtres.cours.groupes.map((g) => ({ id: g, nom: g })) : []}
+  valeur={filtres?.groupe || ''}
+  onChange={gererChangementGroupe}
+  typeIcone="users"
+/>
+
         <MenuDeroulant
           libelle="Mode d'enseignement"
           options={modesEnseignement}
