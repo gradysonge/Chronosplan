@@ -112,11 +112,11 @@ const BarreLaterale = () => {
         </NavLink>
       </nav>
 
-      <div className="mt-auto pt-4 border-t border-emerald-800">
-        <div className="bg-emerald-800/50 rounded-lg p-3 text-sm">
-          <p className="font-medium mb-1">ChronosPlan v1.0</p>
-          <p className="text-emerald-200 text-xs">© 2025 Collège La Cité</p>
-        </div>
+      
+      <div className="mt-auto pt-4 text-center text-xs text-emerald-200 opacity-70">
+        <p>© 2025 ChronosPlan</p>
+        <p>Version 1.0</p>
+
       </div>
     </div>
   );
