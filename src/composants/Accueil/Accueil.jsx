@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import "./accueil.scss"
-
 import {Link} from 'react-router-dom'
-import {Datepicker} from "@mobiscroll/react-lite"
+import "@mobiscroll/react-lite/dist/css/mobiscroll.min.css"; // Ajoute les styles Mobiscroll
+import BasicDateCalendar from './BasicDateCalendar';
+import { DateCalendar } from '@mui/x-date-pickers';
+
 
 
 
@@ -84,10 +86,28 @@ return(
 
             </div>
             <div className='block_2'>
-            <Datepicker
-                controls={['calendar', 'time']}
-                touchUi={true}
-            />
+                <div className='calendar'>
+                <BasicDateCalendar/>
+                </div>
+                <div className="affiche_1_semaine"> 
+                    <button>{"<"}</button>
+                    <span> Lundi </span>
+                    <button>{">"}</button>
+                </div>
+                
+                <div className='affichage_nombreProf_nombreChreno'>
+                    <div className='nombreProf'>
+                        <p>Nombre de Professeurs du programme </p>
+                        <h1>17</h1>
+                    </div>
+
+                    <div className='nombreChreno'>
+                    <p>Espace d’heure Libre dans token shift   </p>
+                    <h1>2</h1>
+                    </div>
+
+                </div>
+                <div className='option_suppression'></div>
             </div>
         </div>
     </div>
