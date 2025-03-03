@@ -78,6 +78,11 @@ const BarreLaterale = () => {
           <span>Cours & Programmes</span>
         </NavLink>
       </nav>
+      
+      <div className="mt-auto pt-4 text-center text-xs text-emerald-200 opacity-70">
+        <p>© 2025 ChronosPlan</p>
+        <p>Tous droits réservés</p>
+      </div>
     </div>
   );
 };
