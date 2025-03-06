@@ -41,17 +41,17 @@ const MenuDeroulant = ({ libelle, options, valeur, onChange, typeIcone }) => {
       
       {estOuvert && (
         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
-          {options.map((option) => (
+          {Array.isArray(options) && options.map((option) => (
             <div
-              key={option.id || option.code}
+              key={option.id || option.code || option}
               className="px-4 py-2 hover:bg-emerald-50 cursor-pointer flex items-center gap-2"
               onClick={() => {
                 onChange(option);
                 setEstOuvert(false);
               }}
             >
-              {option.typeIcone ? obtenirComposantIcone(option.typeIcone) : option.icone}
-              <span>{option.code ? `${option.code} - ${option.nom}` : option.nom}</span>
+              {option.typeIcone ? obtenirComposantIcone(option.typeIcone) : (option.icone ? option.icone : null)}
+              <span>{option.code ? `${option.code} - ${option.nom}` : (typeof option === 'string' ? option : option.nom)}</span>
             </div>
           ))}
         </div>
