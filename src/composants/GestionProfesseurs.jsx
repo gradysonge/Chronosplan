@@ -59,7 +59,7 @@ const GestionProfesseurs = () => {
     const nouveauProfesseurItem = {
       id: `P${professeurs.length + 1}`,
       ...nouveauProfesseur,
-      avatar: `https://i.pravatar.cc/150?u=prof${Date.now()}`,
+      avatar: `https://i.pravatar.cc/151?u=prof${Date.now()}`,
       disponibilites: genererDisponibilitesAleatoires()
     };
 
