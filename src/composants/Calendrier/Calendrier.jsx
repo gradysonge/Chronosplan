@@ -5,8 +5,9 @@ import SelecteurEtape from './SelecteurEtape';
 import StatistiquesProfesseur from './StatistiquesProfesseur';
 import { ContexteAuth } from '../../contexte/Authentification';
 import { professeurs } from '../../donnees/donneesMock';
-import { X, Clock, BookOpen, Users, Monitor, Blend } from 'lucide-react';
-import { validerLimiteCoursProfesseur } from '../../utils/Contraintes';
+import { X, Clock, BookOpen, Users, Monitor, Blend, Trash2 } from 'lucide-react';
+import { validerLimiteCoursProfesseur, respecteLimiteHeuresCoursProfesseurGroupe  } from '../../utils/Contraintes';
+
 
 const joursDelaSemaine = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
 const heures = Array.from({ length: 15 }, (_, i) => i + 8); // 8:00 to 22:00
@@ -44,10 +45,13 @@ const Calendrier = () => {
     let groupeCourant = null;
 
     creneaux.forEach((creneau) => {
-      if (!groupeCourant || 
+      if (!groupeCourant ||
           groupeCourant.professeur.id !== creneau.professeur.id ||
           groupeCourant.jour !== creneau.jour ||
-          parseInt(creneau.heureDebut) !== parseInt(groupeCourant.heureFin)) {
+          parseInt(creneau.heureDebut) !== parseInt(groupeCourant.heureFin) ||
+          groupeCourant.cours.code !== creneau.cours.code ||
+          groupeCourant.groupe !== creneau.groupe ||
+          groupeCourant.modeCours.id !== creneau.modeCours.id) {
         if (groupeCourant) {
           regroupes.push(groupeCourant);
         }
@@ -76,44 +80,57 @@ const Calendrier = () => {
     }
   };
 
+
   const estCreneauDisponible = (jour, heure, heuresConsecutives = 1) => {
-    const creneauxEtapeActuelle = creneauxParEtape[etapeVueSelectionnee?.id] || [];
-    
     for (let i = 0; i < heuresConsecutives; i++) {
-      // Vérifier les conflits de cours (logique existante)
-      const creneauxConflictuels = creneauxEtapeActuelle.filter(creneau => 
-        creneau.jour === jour && 
-        parseInt(creneau.heureDebut) === (heure + i) &&
-        creneau.cours.code === filtres.cours?.code
+      // Vérification existante dans l'étape actuelle
+      const creneauxEtapeActuelle = creneauxParEtape[etapeVueSelectionnee?.id] || [];
+
+      const creneauxConflictuels = creneauxEtapeActuelle.filter(creneau =>
+          creneau.jour === jour &&
+          parseInt(creneau.heureDebut) === (heure + i) &&
+          creneau.cours.code === filtres.cours?.code
       );
 
-      if (creneauxConflictuels.length >= 2) {
-        return false; // Deux cours identiques ne peuvent pas être programmés en même temps
-      }
-
-      // Vérifier le mode d'enseignement (logique existante)
-      const memeModeEnseignement = creneauxConflictuels.find(creneau => creneau.modeCours.id === filtres.modeCours?.id);
-      if (memeModeEnseignement) {
+      if (creneauxConflictuels.length >= 2 ||
+          creneauxConflictuels.some(creneau => creneau.modeCours.id === filtres.modeCours?.id)) {
         return false;
       }
-      
-      // Vérifier si le professeur est déjà occupé à un autre cours (nouvelle vérification)
-      const professeurOccupe = creneauxEtapeActuelle.some(creneau =>
-        creneau.jour === jour &&
-        parseInt(creneau.heureDebut) === (heure + i) &&
-        creneau.professeur.id === filtres.professeur?.id // Vérifier si le professeur est déjà occupé
+
+      const groupeOccupeGlobalement = Object.values(creneauxParEtape).some(creneauxEtape =>
+          creneauxEtape.some(creneau =>
+              creneau.jour === jour &&
+              parseInt(creneau.heureDebut) === (heure + i) &&
+              creneau.groupe === filtres.groupe
+          )
       );
 
-      if (professeurOccupe) {
-        return false; // Le professeur est déjà occupé à ce moment
+      if (groupeOccupeGlobalement) {
+        return false; // Le groupe est déjà pris à cette heure, même avec un autre prof
       }
-      
+
+      // Nouvelle vérification dans TOUTES les étapes (professeur occupé globalement)
+      const professeurOccupeGlobalement = Object.values(creneauxParEtape).some(creneauxEtape =>
+          creneauxEtape.some(creneau =>
+              creneau.jour === jour &&
+              parseInt(creneau.heureDebut) === (heure + i) &&
+              creneau.professeur.id === filtres.professeur?.id
+          )
+      );
+
+      if (professeurOccupeGlobalement) {
+
+        return false; // Le professeur a déjà cours dans une autre étape au même moment
+      }
+
+      // Conserver la vérification de limite horaire
       if (heure + i >= 22) {
         return false;
       }
     }
     return true;
   };
+
 
   const tousLesFiltresSelectionnes = () => {
     return filtres.professeur && filtres.cours && filtres.groupe && filtres.modeCours && filtres.etape && filtres.duree;
@@ -155,7 +172,7 @@ const Calendrier = () => {
       alert('Vous devez être authentifié en tant qu\'administrateur pour créer un horaire.');
       return;
     }
-    
+
     if (!tousLesFiltresSelectionnes()) {
       alert('Veuillez sélectionner tous les critères avant d\'attribuer une disponibilité');
       return;
@@ -167,9 +184,10 @@ const Calendrier = () => {
     }
 
     const heuresConsecutives = filtres.duree?.id || 1;
-    
+
     if (!estCreneauDisponible(jour, heure, heuresConsecutives)) {
-      alert('Cette plage horaire n\'est pas disponible pour le nombre d\'heures demandé');
+      alert('Pas disponible');
+      //alert('Cette plage horaire n\'est pas disponible pour le nombre d\'heures demandé');
       return;
     }
 
@@ -188,8 +206,20 @@ const Calendrier = () => {
       return;
     }
 
+    if (!respecteLimiteHeuresCoursProfesseurGroupe(
+        creneauxParEtape,
+        filtres.professeur,
+        filtres.cours,
+        filtres.groupe,
+        heuresConsecutives
+    )) {
+      alert('Un professeur ne peut pas donner le même cours plus de 3 heures par semaine au même groupe.');
+      return;
+    }
+
+
     const nouveauxCreneaux = creerCreneauxConsecutifs(jour, heure, heuresConsecutives, filtres.professeur);
-    
+
     setCreneauxParEtape(prev => ({
       ...prev,
       [etapeVueSelectionnee.id]: [...(prev[etapeVueSelectionnee.id] || []), ...nouveauxCreneaux]
@@ -256,6 +286,31 @@ const Calendrier = () => {
 
     return '';
   };
+
+  const supprimerPlageReservation = (creneau) => {
+    if (confirm('Supprimer toute la plage horaire de cette réservation ?')) {
+      const heureDebut = parseInt(creneau.heureDebut);
+      const heureFin = parseInt(creneau.heureFin);
+
+      setCreneauxParEtape(prev => {
+        const maj = { ...prev };
+        maj[creneau.etape.id] = maj[creneau.etape.id].filter(c =>
+            !(
+                c.professeur.id === creneau.professeur.id &&
+                c.jour === creneau.jour &&
+                c.groupe === creneau.groupe &&
+                c.cours.code === creneau.cours.code &&
+                parseInt(c.heureDebut) >= heureDebut &&
+                parseInt(c.heureDebut) < heureFin
+            )
+        );
+        return maj;
+      });
+
+      setCreneauSelectionne(null);
+    }
+  };
+
 
   const rendreCreneauxHoraires = (jour, heure) => {
     const creneaux = creneauxHorairesGroupes.filter(
@@ -329,115 +384,128 @@ const Calendrier = () => {
         )}
 
         {creneauSelectionne && (
-          <div className="mb-4 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-2 border-b bg-gray-50">
-              <div className="flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${creneauSelectionne.couleur.badge}`} />
-                <h3 className="text-sm font-medium text-gray-700">Détails de la réservation</h3>
+            <div className="mb-4 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2 border-b bg-gray-50">
+                <div className="flex items-center space-x-2">
+                  <div className={`w-2 h-2 rounded-full ${creneauSelectionne.couleur.badge}`}/>
+                  <h3 className="text-sm font-medium text-gray-700">Détails de la réservation</h3>
+                </div>
+                <button
+                    onClick={() => setCreneauSelectionne(null)}
+                    className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+                >
+                  <X className="w-4 h-4 text-gray-500"/>
+                </button>
               </div>
-              <button
-                onClick={() => setCreneauSelectionne(null)}
-                className="p-1 hover:bg-gray-200 rounded-full transition-colors"
-              >
-                <X className="w-4 h-4 text-gray-500" />
-              </button>
-            </div>
-            <div className="p-3 flex items-center space-x-6">
-              <div className="flex items-center space-x-2">
-                <Users className="w-4 h-4 text-gray-400" />
-                <div className="flex items-center">
-                  <img
-                    src={creneauSelectionne.professeur.avatar}
-                    alt={creneauSelectionne.professeur.nom}
-                    className="w-6 h-6 rounded-full mr-2"
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">{creneauSelectionne.professeur.nom}</p>
-                    <p className="text-xs text-gray-500">{creneauSelectionne.professeur.code}</p>
+              <div className="p-3 flex justify-between items-center">
+                <div className="flex items-center space-x-6">
+                  <div className="flex items-center space-x-2">
+                    <Users className="w-4 h-4 text-gray-400"/>
+                    <div className="flex items-center">
+                      <img
+                          src={creneauSelectionne.professeur.avatar}
+                          alt={creneauSelectionne.professeur.nom}
+                          className="w-6 h-6 rounded-full mr-2"
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">{creneauSelectionne.professeur.nom}</p>
+                        <p className="text-xs text-gray-500">{creneauSelectionne.professeur.code}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <BookOpen className="w-4 h-4 text-gray-400"/>
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">{creneauSelectionne.cours.code}</p>
+                      <p className="text-xs text-gray-500">{creneauSelectionne.cours.nom}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-4 h-4 text-gray-400"/>
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">{creneauSelectionne.jour}</p>
+                      <p className="text-xs text-gray-500">{creneauSelectionne.heureDebut} - {creneauSelectionne.heureFin}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Monitor className="w-4 h-4 text-gray-400"/>
+                    <div>
+                      <p className="text-sm font-medium text-gray-800 flex items-center">
+                        <span className="mr-1">{creneauSelectionne.modeCours.icone}</span>
+                        {creneauSelectionne.modeCours.nom}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Users className="w-4 h-4 text-gray-400"/>
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">
+                        Groupe {creneauSelectionne.groupe}
+                      </p>
+                    </div>
                   </div>
                 </div>
+
+                {/* Bouton poubelle aligné à droite */}
+                <button
+                    onClick={() => supprimerPlageReservation(creneauSelectionne)}
+                    className="p-2 rounded-full hover:bg-red-100 transition"
+                    title="Supprimer cette réservation"
+                >
+                  <Trash2 className="w-5 h-5 text-red-500"/>
+                </button>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <BookOpen className="w-4 h-4 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-800">{creneauSelectionne.cours.code}</p>
-                  <p className="text-xs text-gray-500">{creneauSelectionne.cours.nom}</p>
-                </div>
-              </div>
 
-              <div className="flex items-center space-x-2">
-                <Clock className="w-4 h-4 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-800">{creneauSelectionne.jour}</p>
-                  <p className="text-xs text-gray-500">{creneauSelectionne.heureDebut} - {creneauSelectionne.heureFin}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Monitor className="w-4 h-4 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-800 flex items-center">
-                    <span className="mr-1">{creneauSelectionne.modeCours.icone}</span>
-                    {creneauSelectionne.modeCours.nom}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Users className="w-4 h-4 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-800">
-                    Groupe {creneauSelectionne.groupe}
-                  </p>
-                </div>
-              </div>
             </div>
-          </div>
         )}
       </div>
-      
+
       <div className="flex-1 overflow-hidden px-6 pb-6">
         <div className="flex h-full">
-          <StatistiquesProfesseur creneauxParEtape={creneauxParEtape} />
-          
+          <StatistiquesProfesseur creneauxParEtape={creneauxParEtape}/>
+
           <div className="flex-1 bg-white rounded-lg shadow-sm overflow-auto">
             <div className="sticky top-0 z-10 bg-white grid grid-cols-5 border-b">
               {joursDelaSemaine.map((jour) => (
-                <div
-                  key={jour}
-                  className="px-4 py-3 text-center font-semibold text-gray-700 border-r last:border-r-0"
-                >
-                  {jour}
-                </div>
+                  <div
+                      key={jour}
+                      className="px-4 py-3 text-center font-semibold text-gray-700 border-r last:border-r-0"
+                  >
+                    {jour}
+                  </div>
               ))}
             </div>
 
             <div className="grid grid-cols-5">
               {joursDelaSemaine.map((jour) => (
-                <div key={jour} className="border-r last:border-r-0">
-                  {heuresVisibles.map((heure) => {
-                    const heuresConsecutives = filtres.duree?.id || 1;
-                    const estDisponible = estCreneauDisponible(jour, heure, heuresConsecutives);
-                    const peutSelectionner = etapeVueSelectionnee && tousLesFiltresSelectionnes() && estDisponible;
-                    const estApercu = estCreneauEnApercu(jour, heure);
-                    const couleurFond = obtenirCouleurFondCreneau(jour, heure, estDisponible, peutSelectionner, estApercu);
+                  <div key={jour} className="border-r last:border-r-0">
+                    {heuresVisibles.map((heure) => {
+                      const heuresConsecutives = filtres.duree?.id || 1;
+                      const estDisponible = estCreneauDisponible(jour, heure, heuresConsecutives);
+                      const peutSelectionner = etapeVueSelectionnee && tousLesFiltresSelectionnes() && estDisponible;
+                      const estApercu = estCreneauEnApercu(jour, heure);
+                      const couleurFond = obtenirCouleurFondCreneau(jour, heure, estDisponible, peutSelectionner, estApercu);
 
-                    return (
-                      <div
-                        key={heure}
-                        className={`h-24 border-b last:border-b-0 p-2 transition-colors duration-150 ${
-                          peutSelectionner ? 'cursor-pointer hover:bg-gray-50' : 'cursor-not-allowed'
-                        } ${couleurFond} ${
-                          estApercu && filtres.professeur
-                            ? `border-2 border-${couleursProfesseurs[filtres.professeur.id].badge.replace('bg-', '')}`
-                            : ''
-                        }`}
-                        onClick={() => gererClicCreneau(jour, heure)}
-                        onMouseEnter={() => peutSelectionner && setCreneauSurvole({ jour, heure })}
-                        onMouseLeave={() => setCreneauSurvole(null)}
-                      >
-                        <div className="text-xs text-gray-500 mb-1">
+                      return (
+                          <div
+                              key={heure}
+                              className={`h-24 border-b last:border-b-0 p-2 transition-colors duration-150 ${
+                                  peutSelectionner ? 'cursor-pointer hover:bg-gray-50' : 'cursor-not-allowed'
+                              } ${couleurFond} ${
+                                  estApercu && filtres.professeur
+                                      ? `border-2 border-${couleursProfesseurs[filtres.professeur.id].badge.replace('bg-', '')}`
+                                      : ''
+                              }`}
+                              onClick={() => gererClicCreneau(jour, heure)}
+                              onMouseEnter={() => peutSelectionner && setCreneauSurvole({jour, heure})}
+                              onMouseLeave={() => setCreneauSurvole(null)}
+                          >
+                          <div className="text-xs text-gray-500 mb-1">
                           {`${heure}:00`}
                         </div>
                         {rendreCreneauxHoraires(jour, heure)}

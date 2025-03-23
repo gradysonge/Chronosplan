@@ -1,62 +1,73 @@
 import React from 'react';
-import { Trash2, Info } from 'lucide-react';
+import { Trash2, Clock, User2, BookOpen } from 'lucide-react';
 
-const CreneauHoraire = ({ heureDebut, heureFin, professeur, cours, groupe, modeCours, consecutifs, couleur, onSupprimer, onClick }) => {
+const CreneauHoraire = ({
+                          heureDebut,
+                          heureFin,
+                          professeur,
+                          cours,
+                          groupe,
+                          modeCours,
+                          consecutifs,
+                          couleur,
+                          onSupprimer,
+                          onClick
+                        }) => {
   return (
-    <div
-      className={`rounded-lg p-2 mb-1 ${couleur.bg} transition-transform hover:scale-[1.02] group relative cursor-pointer`}
-      style={{ 
-        height: consecutifs > 1 ? `${consecutifs * 5}rem` : 'auto',
-        maxHeight: '100%'
-      }}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
-    >
-      <div className="flex justify-between items-start mb-1">
-        <span className="text-xs font-medium">
-          {heureDebut} - {heureFin}
-        </span>
-        {consecutifs > 1 && (
-          <span className={`text-xs ${couleur.badge} text-white px-2 py-0.5 rounded`}>
-            {consecutifs}h
-          </span>
-        )}
-      </div>
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center">
-          <img
-            src={professeur.avatar}
-            alt={professeur.nom}
-            className="w-5 h-5 rounded-full mr-1"
-          />
-          <span className="text-xs">{professeur.nom}</span>
-        </div>
-        <div className="text-xs text-gray-600">
-          <div className="flex items-center gap-1">
-            <span>{cours.code}</span>
-            <span className="text-gray-400">•</span>
-            <span>{modeCours.icone}</span>
-            <span className="text-gray-400">•</span>
-            <span>G{groupe}</span>
-          </div>
-        </div>
-      </div>
-      
-      <div className="absolute top-1 right-1 flex gap-1">
-        <button
+      <div
+          className={`relative rounded-lg p-3 ${couleur.bg} transition-transform hover:scale-[1.02] group cursor-pointer flex flex-col justify-center space-y-2
+`}
+          style={{
+            height: consecutifs > 1 ? `${consecutifs * 5}rem` : 'auto',
+            maxHeight: '100%',
+          }}
           onClick={(e) => {
             e.stopPropagation();
-            onSupprimer();
+            onClick();
           }}
-          className="p-1 rounded-full bg-white/0 hover:bg-white/50 opacity-0 group-hover:opacity-100 transition-all duration-200"
-          title="Supprimer ce créneau"
-        >
-          <Trash2 className="w-4 h-4 text-red-500" />
-        </button>
+      >
+        {/* Heure */}
+        <div className="flex items-center text-sm font-semibold text-gray-800 mb-1">
+          <Clock className="w-4 h-4 mr-1 text-gray-500" />
+          {heureDebut} - {heureFin}
+          {consecutifs > 1 && (
+              <span className={`ml-2 text-xs ${couleur.badge} text-white px-2 py-0.5 rounded`}>
+            {consecutifs}h
+          </span>
+          )}
+        </div>
+
+        {/* Prof */}
+        <div className="flex items-center text-sm text-gray-700 mb-1">
+          <User2 className="w-4 h-4 mr-1 text-gray-500" />
+          <img
+              src={professeur.avatar}
+              alt={professeur.nom}
+              className="w-5 h-5 rounded-full mr-2"
+          />
+          {professeur.nom}
+        </div>
+
+        {/* Cours, groupe, mode */}
+        <div className="flex items-center text-xs text-gray-600">
+          <BookOpen className="w-4 h-4 mr-1 text-gray-500" />
+          {cours.code} • {modeCours.icone} {modeCours.nom} • G{groupe}
+        </div>
+
+        {/* Icône de suppression */}
+        <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition">
+          <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onSupprimer();
+              }}
+              title="Supprimer ce créneau"
+              className="p-1 rounded-full hover:bg-white/70"
+          >
+            <Trash2 className="w-4 h-4 text-red-500" />
+          </button>
+        </div>
       </div>
-    </div>
   );
 };
 
