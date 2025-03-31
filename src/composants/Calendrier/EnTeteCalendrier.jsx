@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, Users, BookOpen, GraduationCap, Clock, Blend } from 'lucide-react';
-import { professeurs, cours, etapes, modesEnseignement, durees } from '../../donnees/donneesMock';
+import { professeurs, modesEnseignement, durees } from '../../donnees/donneesMock';
 
 const obtenirComposantIcone = (typeIcone, className = "w-4 h-4") => {
   switch (typeIcone) {
@@ -38,12 +38,12 @@ const MenuDeroulant = ({ libelle, options, valeur, onChange, typeIcone }) => {
         </div>
         <ChevronDown className={`w-5 h-5 ${valeur ? 'text-emerald-400' : 'text-gray-400'}`} />
       </button>
-      
+
       {estOuvert && (
         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
           {Array.isArray(options) && options.map((option) => (
             <div
-              key={option.id || option.code || option}
+              key={option._id || option.id || option.code || option}
               className="px-4 py-2 hover:bg-emerald-50 cursor-pointer flex items-center gap-2"
               onClick={() => {
                 onChange(option);
@@ -62,6 +62,33 @@ const MenuDeroulant = ({ libelle, options, valeur, onChange, typeIcone }) => {
 
 const EnTeteCalendrier = ({ onChangementFiltre, filtres }) => {
   const [coursSelectionne, setCoursSelectionne] = useState(null);
+  const [programmeSelectionne, setProgrammeSelectionne] = useState(null);
+  const [etapesFiltrees, setEtapesFiltrees] = useState([]);
+  const [programmesBD, setProgrammesBD] = useState([]);
+  const [coursBD, setCoursBD] = useState([]);
+
+  useEffect(() => {
+    const fetchProgrammes = async () => {
+      const res = await fetch('http://localhost:5000/api/programmes');
+      const data = await res.json();
+      setProgrammesBD(data);
+    };
+
+    const fetchCours = async () => {
+      const res = await fetch('http://localhost:5000/api/cours');
+      const data = await res.json();
+      setCoursBD(data);
+    };
+
+    fetchProgrammes();
+    fetchCours();
+  }, []);
+
+  const gererChangementProgramme = (programme) => {
+    setProgrammeSelectionne(programme);
+    setEtapesFiltrees(programme.etapes || []);
+    onChangementFiltre?.({ programme });
+  };
 
   const gererChangementProfesseur = (prof) => {
     onChangementFiltre?.({ professeur: prof });
@@ -88,19 +115,30 @@ const EnTeteCalendrier = ({ onChangementFiltre, filtres }) => {
     onChangementFiltre?.({ duree });
   };
 
+  const coursFiltresParEtape = filtres.etape
+    ? coursBD.filter((c) => c.etapeId === filtres.etape.id)
+    : [];
+
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-      <div className="grid grid-cols-6 gap-4">
+      <div className="grid grid-cols-7 gap-4">
         <MenuDeroulant
-          libelle="Code Professeur"
-          options={professeurs}
-          valeur={filtres?.professeur ? `${filtres.professeur.code} - ${filtres.professeur.nom}` : ''}
-          onChange={gererChangementProfesseur}
-          typeIcone="users"
+          libelle="Programme"
+          options={programmesBD}
+          valeur={programmeSelectionne?.nom || ''}
+          onChange={gererChangementProgramme}
+          typeIcone="graduation"
         />
         <MenuDeroulant
-          libelle="Code Cours"
-          options={cours}
+          libelle="Étapes"
+          options={etapesFiltrees}
+          valeur={filtres?.etape?.nom || ''}
+          onChange={gererChangementEtape}
+          typeIcone="graduation"
+        />
+        <MenuDeroulant
+          libelle="Cours"
+          options={coursFiltresParEtape}
           valeur={filtres?.cours ? `${filtres.cours.code} - ${filtres.cours.nom}` : ''}
           onChange={gererChangementCours}
           typeIcone="book"
@@ -113,18 +151,18 @@ const EnTeteCalendrier = ({ onChangementFiltre, filtres }) => {
           typeIcone="users"
         />
         <MenuDeroulant
+          libelle="Professeur"
+          options={professeurs}
+          valeur={filtres?.professeur ? `${filtres.professeur.code} - ${filtres.professeur.nom}` : ''}
+          onChange={gererChangementProfesseur}
+          typeIcone="users"
+        />
+        <MenuDeroulant
           libelle="Mode d'enseignement"
           options={modesEnseignement}
           valeur={filtres?.modeCours ? `${filtres.modeCours.icone} ${filtres.modeCours.nom}` : ''}
           onChange={gererChangementModeCours}
           typeIcone="blend"
-        />
-        <MenuDeroulant
-          libelle="Étapes"
-          options={etapes}
-          valeur={filtres?.etape?.nom || ''}
-          onChange={gererChangementEtape}
-          typeIcone="graduation"
         />
         <MenuDeroulant
           libelle="Durée"

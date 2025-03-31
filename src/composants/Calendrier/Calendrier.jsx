@@ -23,6 +23,16 @@ const couleursProfesseurs = {
   P8: { bg: 'bg-red-100 hover:bg-red-200', badge: 'bg-red-500' },
   P9: { bg: 'bg-teal-100 hover:bg-teal-200', badge: 'bg-teal-500' },
   P10: { bg: 'bg-cyan-100 hover:bg-cyan-200', badge: 'bg-cyan-500' },
+  P11: { bg: 'bg-lime-100 hover:bg-lime-200', badge: 'bg-lime-500' },
+  P12: { bg: 'bg-amber-100 hover:bg-amber-200', badge: 'bg-amber-500' },
+  P13: { bg: 'bg-emerald-100 hover:bg-emerald-200', badge: 'bg-emerald-500' },
+  P14: { bg: 'bg-fuchsia-100 hover:bg-fuchsia-200', badge: 'bg-fuchsia-500' },
+  P15: { bg: 'bg-rose-100 hover:bg-rose-200', badge: 'bg-rose-500' },
+  P16: { bg: 'bg-violet-100 hover:bg-violet-200', badge: 'bg-violet-500' },
+  P17: { bg: 'bg-sky-100 hover:bg-sky-200', badge: 'bg-sky-500' },
+  P18: { bg: 'bg-stone-100 hover:bg-stone-200', badge: 'bg-stone-500' },
+  P19: { bg: 'bg-zinc-100 hover:bg-zinc-200', badge: 'bg-zinc-500' },
+  P20: { bg: 'bg-gray-100 hover:bg-gray-200', badge: 'bg-gray-500' },
 };
 
 const Calendrier = () => {
@@ -97,17 +107,6 @@ const Calendrier = () => {
         return false;
       }
 
-      const groupeOccupeGlobalement = Object.values(creneauxParEtape).some(creneauxEtape =>
-          creneauxEtape.some(creneau =>
-              creneau.jour === jour &&
-              parseInt(creneau.heureDebut) === (heure + i) &&
-              creneau.groupe === filtres.groupe
-          )
-      );
-
-      if (groupeOccupeGlobalement) {
-        return false; // Le groupe est déjà pris à cette heure, même avec un autre prof
-      }
 
       // Nouvelle vérification dans TOUTES les étapes (professeur occupé globalement)
       const professeurOccupeGlobalement = Object.values(creneauxParEtape).some(creneauxEtape =>
