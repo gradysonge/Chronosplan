@@ -21,3 +21,29 @@ export const validerLimiteCoursProfesseur = (creneauxParEtape, etapeVueSelection
 
   return true; // Limite respectée
 };
+
+export const respecteLimiteHeuresCoursProfesseurGroupe = (
+    creneauxParEtape,
+    professeur,
+    cours,
+    groupe,
+    heuresConsecutives
+) => {
+  let totalHeures = 0;
+
+  Object.values(creneauxParEtape).forEach(creneauxEtape => {
+    creneauxEtape.forEach(creneau => {
+      if (
+          creneau.professeur.id === professeur.id &&
+          creneau.cours.code === cours.code &&
+          creneau.groupe === groupe
+      ) {
+        const debut = parseInt(creneau.heureDebut);
+        const fin = parseInt(creneau.heureFin);
+        totalHeures += fin - debut;
+      }
+    });
+  });
+
+  return totalHeures + heuresConsecutives <= 3;
+};

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit, Save, X, Search, Mail, Calendar, Clock, FileSpreadsheet } from 'lucide-react';
-import { professeurs as professeursMock } from '../donnees/donneesMock';
+
 
 const GestionProfesseurs = () => {
   const [professeurs, setProfesseurs] = useState([]);
@@ -17,16 +17,14 @@ const GestionProfesseurs = () => {
 
   // Chargement des données initiales
   useEffect(() => {
-    //
-    const professeursAmeliores = professeursMock.map(prof => ({
-      ...prof,
-      email: `${prof.code.toLowerCase()}@collegelacite.ca`,
-      heuresMax: Math.floor(Math.random() * 10) + 15, // 15-25 heures
-      disponibilites: genererDisponibilitesAleatoires()
-    }));
-    
-    setProfesseurs(professeursAmeliores);
+    fetch('http://localhost:5000/api/professeurs')
+        .then(res => res.json())
+        .then(data => {
+          setProfesseurs(data);
+        })
+        .catch(err => console.error("Erreur chargement professeurs", err));
   }, []);
+
 
   const genererDisponibilitesAleatoires = () => {
     const jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
@@ -52,56 +50,82 @@ const GestionProfesseurs = () => {
   };
 
   const ajouterProfesseur = () => {
-    if (!nouveauProfesseur.code.trim() || !nouveauProfesseur.nom.trim()) {
-      return;
-    }
+    if (!nouveauProfesseur.code.trim() || !nouveauProfesseur.nom.trim()) return;
 
-    const nouveauProfesseurItem = {
-      id: `P${professeurs.length + 1}`,
+    const payload = {
       ...nouveauProfesseur,
-      avatar: `https://i.pravatar.cc/150?u=prof${Date.now()}`,
-      disponibilites: genererDisponibilitesAleatoires()
+
+      disponibilites: {
+        Lundi: ["8:00 - 12:00", "13:00 - 17:00"],
+        Mardi: ["13:00 - 17:00"]
+      }
     };
 
-    setProfesseurs([...professeurs, nouveauProfesseurItem]);
-    setNouveauProfesseur({
-      code: '',
-      nom: '',
-      email: '',
-      heuresMax: 20
-    });
-    setAjoutProfesseur(false);
+    fetch('http://localhost:5000/api/professeurs', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+        .then(res => res.json())
+        .then(data => {
+          setProfesseurs([...professeurs, data]);
+          setNouveauProfesseur({
+            code: '',
+            nom: '',
+            email: '',
+            heuresMax: 30
+          });
+          setAjoutProfesseur(false);
+        })
+        .catch(err => console.error("Erreur ajout professeur", err));
   };
+
 
   const mettreAJourProfesseur = () => {
-    const professeursMAJ = professeurs.map(professeur => {
-      if (professeur.id === professeurEnEdition.id) {
-        return {
-          ...professeur,
-          ...nouveauProfesseur
-        };
-      }
-      return professeur;
-    });
+    if (!professeurEnEdition || !professeurEnEdition._id) return;
 
-    setProfesseurs(professeursMAJ);
-    setProfesseurEnEdition(null);
-    setNouveauProfesseur({
-      code: '',
-      nom: '',
-      email: '',
-      heuresMax: 20
-    });
+    fetch(`http://localhost:5000/api/professeurs/${professeurEnEdition._id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(nouveauProfesseur)
+    })
+        .then(res => res.json())
+        .then(data => {
+          const professeursMAJ = professeurs.map(prof =>
+              prof._id === data._id ? data : prof
+          );
+          setProfesseurs(professeursMAJ);
+          setProfesseurEnEdition(null);
+          setNouveauProfesseur({
+            code: '',
+            nom: '',
+            email: '',
+            heuresMax: 20
+          });
+        })
+        .catch(err => console.error("Erreur mise à jour professeur", err));
   };
+
 
   const supprimerProfesseur = (professeurId) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce professeur?')) {
-      setProfesseurs(professeurs.filter(professeur => professeur.id !== professeurId));
-      if (professeurSelectionne && professeurSelectionne.id === professeurId) {
-        setProfesseurSelectionne(null);
-      }
+      fetch(`http://localhost:5000/api/professeurs/${professeurId}`, {
+        method: 'DELETE'
+      })
+          .then(() => {
+            setProfesseurs(professeurs.filter(p => p._id !== professeurId));
+            if (professeurSelectionne && professeurSelectionne._id === professeurId) {
+              setProfesseurSelectionne(null);
+            }
+          })
+          .catch(err => console.error("Erreur suppression professeur", err));
     }
   };
+
 
   const commencerEditionProfesseur = (professeur) => {
     setProfesseurEnEdition(professeur);
@@ -131,7 +155,7 @@ const GestionProfesseurs = () => {
     if (!professeurSelectionne) return;
     
     const professeursMAJ = professeurs.map(professeur => {
-      if (professeur.id === professeurSelectionne.id) {
+      if (professeur._id === professeurSelectionne._id) {
         const disponibilitesMAJ = { ...professeur.disponibilites };
         
         if (disponibilitesMAJ[jour]?.includes(creneau)) {
@@ -154,7 +178,7 @@ const GestionProfesseurs = () => {
     });
     
     setProfesseurs(professeursMAJ);
-    setProfesseurSelectionne(professeursMAJ.find(p => p.id === professeurSelectionne.id));
+    setProfesseurSelectionne(professeursMAJ.find(p => p._id === professeurSelectionne._id));
   };
 
   const exporterEmploiDuTemps = () => {
@@ -335,18 +359,13 @@ const GestionProfesseurs = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {professeursFiltres.map((professeur) => (
                   <div 
-                    key={professeur.id}
+                    key={professeur._id}
                     className={`border rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer ${
-                      professeurSelectionne?.id === professeur.id ? 'border-emerald-500 ring-2 ring-emerald-200' : 'border-gray-200'
+                      professeurSelectionne?._id === professeur._id ? 'border-emerald-500 ring-2 ring-emerald-200' : 'border-gray-200'
                     }`}
                     onClick={() => setProfesseurSelectionne(professeur)}
                   >
                     <div className="flex p-4">
-                      <img 
-                        src={professeur.avatar} 
-                        alt={professeur.nom} 
-                        className="w-16 h-16 rounded-full mr-4 object-cover"
-                      />
                       <div className="flex-1">
                         <div className="flex justify-between">
                           <div>
@@ -366,7 +385,7 @@ const GestionProfesseurs = () => {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                supprimerProfesseur(professeur.id);
+                                supprimerProfesseur(professeur._id);
                               }}
                               className="p-1 text-red-600 hover:bg-red-100 rounded-full"
                             >
@@ -415,11 +434,15 @@ const GestionProfesseurs = () => {
               </div>
 
               <div className="flex items-center mb-6">
-                <img 
-                  src={professeurSelectionne.avatar} 
-                  alt={professeurSelectionne.nom} 
-                  className="w-20 h-20 rounded-full mr-4 object-cover"
-                />
+                <div
+                    className="w-16 h-16 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center mr-4 text-sm font-medium">
+                  {professeurSelectionne.nom
+                      ?.split(' ')
+                      .map(mot => mot.charAt(0).toUpperCase())
+                      .join('')
+                  }
+
+                </div>
                 <div>
                   <h3 className="text-xl font-medium text-gray-800">{professeurSelectionne.nom}</h3>
                   <p className="text-gray-500">{professeurSelectionne.code}</p>
@@ -428,7 +451,7 @@ const GestionProfesseurs = () => {
 
               <div className="mb-6 space-y-3">
                 <div className="flex items-center">
-                  <Mail className="w-5 h-5 text-gray-400 mr-3" />
+                  <Mail className="w-5 h-5 text-gray-400 mr-3"/>
                   <div>
                     <p className="text-sm text-gray-800">{professeurSelectionne.email}</p>
                     <p className="text-xs text-gray-500">Email</p>
