@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Trash2, Edit, Save, X, ChevronDown, ChevronUp, BookOpen, GraduationCap, Clock, Search } from 'lucide-react';
 import "./accueil.scss"
 import {Link} from 'react-router-dom'
 import "@mobiscroll/react-lite/dist/css/mobiscroll.min.css"; // Ajoute les styles Mobiscroll
@@ -10,31 +11,51 @@ import { DateCalendar } from '@mui/x-date-pickers';
 
 
 const Accueil = () =>{
+const [professeurs, setProfesseurs] = useState([])
+const [programmes, setProgrammes] = useState([]);
+const [cours, setCours] = useState([]);
+const [rechercheQuery, setRechercheQuery] = useState('');
+const [programmeSelectionne, setProgrammeSelectionne] = useState(null);
+const [etapeSelectionnee, setEtapeSelectionnee] = useState(null);
+const [pageActuelle, setPageActuelle] = useState(1);
+const coursParPage = 10;
 
-    const [selectedCategory, setSelectedCategory] = useState("");
-    const [selectedEtape, setSelectedEtape] = useState("");
-    const [selectedAnnee, setSelectedAnnee] = useState("");
+// Charger les programmes et les cours depuis l'API
+useEffect(() => {
+  fetch('http://localhost:5000/api/programmes')
+    .then(res => res.json())
+    .then(data => setProgrammes(data))
+    .catch(err => console.error('Erreur chargement programmes', err));
 
-    const coursSelonProgramme = [
-        {id: 1, name : "Programmation distribuee", annee: 2, etape: 1, category: "Génie informatique" }, 
-        {id: 2, name : "Pyhton", annee: 1,  etape: 1, category: "Programmation" }, 
-        {id: 3, name : "Programmation C# C", annee: 1, etape: 2, category: "Programmation" }, 
-        {id: 4, name : "Structure des donnees", annee: 1, etape: 2, category: "Programmation" }, 
-        {id: 5, name : "Algorithme", annee: 1, etape: 1, category: "Programmation" }, 
-        {id: 6, name : "Base de donnees massive", annee: 1, etape: 1, category: "Génie informatique" }, 
-        {id: 7, name : "Electronique", annee: 1, etape: 1, category: "Génie informatique" }, 
-        {id: 8, name : "Projet d'integration", annee: 1, etape: 1, category: "Génie informatique" }, 
-        {id: 9, name : "Introduction a l'intelligence artificielle", annee: 1, etape: 2, category: "Génie informatique" }, 
-        {id: 10, name : "Base de donnees", annee: 2, etape: 2, category: "Génie informatique" }, 
-    ];
-    const categoriesSelected = [...new Set(coursSelonProgramme.map(item => item.category))]
+  fetch('http://localhost:5000/api/cours')
+    .then(res => res.json())
+    .then(data => setCours(data))
+    .catch(err => console.error('Erreur chargement cours', err));
 
-    const etapeSelected = [...new Set(coursSelonProgramme.map(item => item.etape))]
+    fetch('http://localhost:5000/api/professeurs')
+    .then(res => res.json())
+    .then(data => setProfesseurs(data))
+    .catch(err => console.error("Erreur chargement professeurs", err))
+}, []);
 
-    const filteredData = selectedCategory && selectedEtape && selectedAnnee ? coursSelonProgramme.filter(item => (item.category === selectedCategory && item.etape === selectedEtape && item.annee === selectedAnnee )): [];
+// Calculer les indices pour la pagination
+const indexDernierCours = pageActuelle * coursParPage;
+const indexPremierCours = indexDernierCours - coursParPage;
 
-    const firstItem = filteredData.length > 0 ? filteredData[0] : null;
+// Filtrer les cours en fonction de la recherche, du programme et de l'étape
+const coursFiltres = cours.filter(c =>
+  (programmeSelectionne ? c.programmeId === programmeSelectionne : true) &&
+  (etapeSelectionnee ? c.etapeId === etapeSelectionnee : true) &&
+  (rechercheQuery
+    ? c.code.toLowerCase().includes(rechercheQuery.toLowerCase()) ||
+      c.nom.toLowerCase().includes(rechercheQuery.toLowerCase())
+    : true)
+);
 
+const nombreProfesseursParProgramme = professeurs.filter(prof => prof.programme ==programme.nom).length;
+// Cours visibles sur la page actuelle
+const coursVisibles = coursFiltres.slice(indexPremierCours, indexDernierCours);
+const totalPages = Math.ceil(coursFiltres.length / coursParPage);
 
 
 return(
@@ -51,7 +72,123 @@ return(
         </div>
         <div className='main_body'>
             <div className='block_1'>
-                <div className='Selction_niveau1'>
+            <h1>Liste des Cours</h1>
+
+{/* Sélection du programme */}
+<div className='Selction_niveau1'>
+  <select
+    onChange={(e) => setProgrammeSelectionne(e.target.value)}
+    value={programmeSelectionne || ''}
+  >
+    <option value="">Sélectionner un programme</option>
+    {programmes.map((programme) => (
+      <option key={programme._id} value={programme._id}>
+        {programme.nom}
+      </option>
+    ))}
+  </select>
+</div>
+
+{/* Sélection de l'étape du programme */}
+{programmeSelectionne && (
+  <div className='Selction_niveau2'>
+    <select
+      onChange={(e) => setEtapeSelectionnee(e.target.value)}
+      value={etapeSelectionnee || ''}
+    >
+      <option value="">Sélectionner une étape</option>
+      {programmes
+        .find((programme) => programme._id === programmeSelectionne)
+        ?.etapes.map((etape) => (
+          <option key={etape.id} value={etape.id}>
+            {etape.nom}
+          </option>
+        ))}
+    </select>
+  </div>
+)}
+
+{/* Barre de recherche */}
+<div className='Recherche'>
+  <div className='carre'></div>
+  <div className='Recherche_carre'>
+  <input
+
+    type="text"
+    placeholder="Rechercher..."
+    value={rechercheQuery}
+    onChange={(e) => setRechercheQuery(e.target.value)}
+  />
+  <Search />
+  </div>
+</div>
+
+{/* Affichage des cours */}
+<div className='affichage_selection'>
+  {coursVisibles.map((cours) => (
+    <div key={cours._id} className="cours-card">
+      <h3>{cours.nom}</h3>
+      <p>Code: {cours.code}</p>
+      <p>Crédits: {cours.credits}</p>
+    </div>
+  ))}
+</div>
+
+{/* Pagination */}
+<div className='affiche_1_semaine'>
+  <button
+    disabled={pageActuelle === 1}
+    onClick={() => setPageActuelle(pageActuelle - 1)}
+  >
+    {"<"}
+  </button>
+  <span>Page {pageActuelle} sur {totalPages}</span>
+  <button
+    disabled={pageActuelle === totalPages}
+    onClick={() => setPageActuelle(pageActuelle + 1)}
+  >
+    {">"}
+  </button>
+</div>
+
+            </div>
+            <div className='block_2'>
+                <div className='calendar'>
+                <BasicDateCalendar/>
+                </div>
+                <div className="affiche_1_semaine"> 
+                <button>  </button>
+                <span> {programmeSelectionne} </span>
+                <button>  </button>
+                </div>
+                
+                <div className='affichage_nombreProf_nombreChreno'>
+                    <div className='nombreProf'>
+                        <p>Nombre total de professeur actif </p>
+                        <h1>{professeurs.length}</h1>
+                    </div>
+
+                    <div className='nombreChreno'>
+                    <p>Nombre de professeur du programme selectionné</p>
+                    <h1>{nombreProfesseursParProgramme}</h1>
+                    </div>
+
+                </div>
+                <div className='option_suppression'></div>
+            </div>
+        </div>
+    </div>
+)
+} 
+export default Accueil;
+
+/*
+ <button> {"<"} </button>
+                    <span> Lundi </span>
+                    <button> {">"} </button>
+
+
+<div className='Selction_niveau1'>
                     <select onChange={(e) => setSelectedCategory(e.target.value)}>
                         <option value=""> selectionnez un programme</option>
                         {categoriesSelected.map((category, index) => (
@@ -82,46 +219,6 @@ return(
                         </div>
                     ))}
                 </div>
-                
-
-            </div>
-            <div className='block_2'>
-                <div className='calendar'>
-                <BasicDateCalendar/>
-                </div>
-                <div className="affiche_1_semaine"> 
-                    <button>{"<"}</button>
-                    <span> Lundi </span>
-                    <button>{">"}</button>
-                </div>
-                
-                <div className='affichage_nombreProf_nombreChreno'>
-                    <div className='nombreProf'>
-                        <p>Nombre de Professeurs du programme </p>
-                        <h1>17</h1>
-                    </div>
-
-                    <div className='nombreChreno'>
-                    <p>Espace d’heure Libre dans token shift   </p>
-                    <h1>2</h1>
-                    </div>
-
-                </div>
-                <div className='option_suppression'></div>
-            </div>
-        </div>
-    </div>
-)
-} 
-export default Accueil;
-
-/*
-{firstItem &&(
-                    <div>
-                        <h3>{firstItem.name}</h3>
-                        <p>Etape : {firstItem.etape}</p>
-                    </div>
-                )}
 */
 
 
