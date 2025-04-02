@@ -26,6 +26,8 @@ app.use(express.json());
 app.use('/api/professeurs', professeurRoutes);
 app.use('/api/programmes', programmeRoutes);
 app.use('/api/cours', coursRoutes);
+app.use('/api/creneaux', require('./routes/creneauRoutes'));
+
 
 // Connexion à MongoDB
 mongoose.connect(process.env.MONGODB_URI)

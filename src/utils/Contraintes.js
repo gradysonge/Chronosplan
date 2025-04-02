@@ -5,8 +5,11 @@ export const validerLimiteCoursProfesseur = (creneauxParEtape, etapeVueSelection
   const creneauxProfesseurCours = creneauxEtapeActuelle.filter(creneau =>
     creneau.professeur.id === professeur.id &&
     creneau.cours.code === cours.code &&
-    creneau.groupe === groupe
+    creneau.groupe === groupe &&
+    creneau.etapeId === etapeVueSelectionnee.id &&
+    cours.programmeId === creneau.cours.programmeId
   );
+  
 
   // Calculer le total des heures déjà attribuées pour ce cours, ce professeur et ce groupe
   const totalHeures = creneauxProfesseurCours.reduce((total, creneau) => {
@@ -22,28 +25,57 @@ export const validerLimiteCoursProfesseur = (creneauxParEtape, etapeVueSelection
   return true; // Limite respectée
 };
 
-export const respecteLimiteHeuresCoursProfesseurGroupe = (
-    creneauxParEtape,
-    professeur,
-    cours,
-    groupe,
-    heuresConsecutives
+export const validerLimiteCoursGroupe = (
+  creneauxParEtape,
+  etapeVueSelectionnee,
+  groupe,
+  cours, // cours au lieu de coursId
+  heuresAAjouter
 ) => {
-  let totalHeures = 0;
+  const creneauxEtape = creneauxParEtape[etapeVueSelectionnee?.id] || [];
 
-  Object.values(creneauxParEtape).forEach(creneauxEtape => {
-    creneauxEtape.forEach(creneau => {
-      if (
-          creneau.professeur.id === professeur.id &&
-          creneau.cours.code === cours.code &&
-          creneau.groupe === groupe
-      ) {
-        const debut = parseInt(creneau.heureDebut);
-        const fin = parseInt(creneau.heureFin);
-        totalHeures += fin - debut;
-      }
-    });
-  });
+  const totalHeures = creneauxEtape
+    .filter(c =>
+      c.cours.id === cours.id &&
+      c.cours.programmeId === cours.programmeId &&
+      c.groupe === groupe &&
+      c.etapeId === etapeVueSelectionnee.id
+    )
+    .reduce((acc, curr) => {
+      const debut = parseInt(curr.heureDebut);
+      const fin = parseInt(curr.heureFin);
+      return acc + (fin - debut);
+    }, 0);
 
-  return totalHeures + heuresConsecutives <= 3;
+  return (totalHeures + heuresAAjouter) <= 3;
+};
+
+
+
+
+
+export const respecteLimiteHeuresCoursProfesseurGroupe = (
+  creneauxParEtape,
+  etapeVueSelectionnee,
+  professeurId,
+  groupe,
+  coursId,
+  heuresAAjouter
+) => {
+  const creneauxEtape = creneauxParEtape[etapeVueSelectionnee?.id] || [];
+
+  const totalHeures = creneauxEtape
+    .filter(c =>
+      c.cours.id === coursId &&
+      c.professeur.id === professeurId &&
+      c.groupe === groupe &&
+      c.etapeId === etapeVueSelectionnee.id // ✅ distinction par étape
+    )
+    .reduce((acc, curr) => {
+      const debut = parseInt(curr.heureDebut);
+      const fin = parseInt(curr.heureFin);
+      return acc + (fin - debut);
+    }, 0);
+
+  return (totalHeures + heuresAAjouter) <= 3;
 };
