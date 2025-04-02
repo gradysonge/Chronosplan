@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import EnTeteCalendrier from './EnTeteCalendrier';
 import CreneauHoraire from './CreneauHoraire';
 import SelecteurEtape from './SelecteurEtape';
@@ -6,7 +6,7 @@ import StatistiquesProfesseur from './StatistiquesProfesseur';
 import { ContexteAuth } from '../../contexte/Authentification';
 import { professeurs } from '../../donnees/donneesMock';
 import { X, Clock, BookOpen, Users, Monitor, Blend, Trash2 } from 'lucide-react';
-import { validerLimiteCoursProfesseur, respecteLimiteHeuresCoursProfesseurGroupe  } from '../../utils/Contraintes';
+import { validerLimiteCoursProfesseur, respecteLimiteHeuresCoursProfesseurGroupe, validerLimiteCoursGroupe  } from '../../utils/Contraintes';
 
 
 const joursDelaSemaine = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
@@ -50,38 +50,59 @@ const Calendrier = () => {
   const [creneauSurvole, setCreneauSurvole] = useState(null);
   const [creneauSelectionne, setCreneauSelectionne] = useState(null);
 
-  const regrouperCreneauxConsecutifs = (creneaux) => {
-    const regroupes = [];
-    let groupeCourant = null;
+    useEffect(() => {
+      if (!etapeVueSelectionnee) return;
+    
+      fetch(`http://localhost:5000/api/creneaux/${etapeVueSelectionnee.id}`)
+        .then(res => res.json())
+        .then(data => {
+          const creneauxFormates = data.map(c => ({
+            id: c._id, // Utilisez l'ID généré par MongoDB
+            jour: c.jour,
+            heureDebut: `${c.heureDebut}:00`,
+            heureFin: `${c.heureFin}:00`,
+            professeur: c.professeur,
+            cours: c.cours,
+            groupe: c.groupe,
+            etapeId: c.etapeId,
+            modeCours: c.modeCours || { id: '', nom: '', icone: '' },
+            couleur: couleursProfesseurs[c.professeur.id] // Ajoutez la couleur basée sur l'ID du professeur
+          }));
+    
+          setCreneauxParEtape(prev => ({
+            ...prev,
+            [etapeVueSelectionnee.id]: creneauxFormates
+          }));
+        })
+        .catch(err => {
+          console.error("❌ Erreur chargement des créneaux :", err);
+        });
+    }, [etapeVueSelectionnee]); // Supprimez creneauxParEtape des dépendances
+  
 
-    creneaux.forEach((creneau) => {
-      if (!groupeCourant ||
-          groupeCourant.professeur.id !== creneau.professeur.id ||
-          groupeCourant.jour !== creneau.jour ||
-          parseInt(creneau.heureDebut) !== parseInt(groupeCourant.heureFin) ||
-          groupeCourant.cours.code !== creneau.cours.code ||
-          groupeCourant.groupe !== creneau.groupe ||
-          groupeCourant.modeCours.id !== creneau.modeCours.id) {
+    const regrouperCreneauxConsecutifs = (creneaux) => {
+      const groupes = [];
+    
+      creneaux.forEach((creneau) => {
+        const groupeCourant = groupes.find((groupe) =>
+          groupe.professeur.id === creneau.professeur.id &&
+          groupe.cours.id === creneau.cours.id &&
+          groupe.groupe === creneau.groupe &&
+          (groupe.modeCours?.id || '') === (creneau.modeCours?.id || '') &&
+          groupe.jour === creneau.jour &&
+          parseInt(groupe.heureFin) === parseInt(creneau.heureDebut)
+        );
+    
         if (groupeCourant) {
-          regroupes.push(groupeCourant);
+          groupeCourant.heureFin = creneau.heureFin;
+        } else {
+          groupes.push({ ...creneau });
         }
-        groupeCourant = {
-          ...creneau,
-          consecutifs: 1,
-          heureFinOriginale: creneau.heureFin
-        };
-      } else {
-        groupeCourant.consecutifs++;
-        groupeCourant.heureFin = creneau.heureFin;
-      }
-    });
-
-    if (groupeCourant) {
-      regroupes.push(groupeCourant);
-    }
-
-    return regroupes;
-  };
+      });
+    
+      return groupes;
+    };
+  
 
   const gererChangementFiltre = (nouveauxFiltres) => {
     setFiltres({ ...filtres, ...nouveauxFiltres });
@@ -109,25 +130,34 @@ const Calendrier = () => {
 
 
       // Nouvelle vérification dans TOUTES les étapes (professeur occupé globalement)
-      const professeurOccupeGlobalement = Object.values(creneauxParEtape).some(creneauxEtape =>
-          creneauxEtape.some(creneau =>
-              creneau.jour === jour &&
-              parseInt(creneau.heureDebut) === (heure + i) &&
-              creneau.professeur.id === filtres.professeur?.id
-          )
+      const groupeOccupe = creneauxEtapeActuelle.some(creneau =>
+        creneau.jour === jour &&
+        parseInt(creneau.heureDebut) === (heure + i) &&
+        creneau.groupe === filtres.groupe
       );
-
-      if (professeurOccupeGlobalement) {
-
-        return false; // Le professeur a déjà cours dans une autre étape au même moment
+      if (groupeOccupe) {
+        return { disponible: false, raison: "Ce groupe d'étudiants est déjà en cours à ce moment-là." };
       }
-
-      // Conserver la vérification de limite horaire
+  
+      // ⚠️ Professeur déjà occupé (toutes étapes)
+      const professeurOccupeGlobalement = Object.values(creneauxParEtape).some(creneauxEtape =>
+        creneauxEtape.some(creneau =>
+          creneau.jour === jour &&
+          parseInt(creneau.heureDebut) === (heure + i) &&
+          creneau.professeur.id === filtres.professeur?.id
+        )
+      );
+      if (professeurOccupeGlobalement) {
+        return { disponible: false, raison: "Ce professeur a déjà un cours à ce moment-là." };
+      }
+  
+      // ⚠️ Heures autorisées
       if (heure + i >= 22) {
-        return false;
+        return { disponible: false, raison: "L'horaire dépasse la limite autorisée (22h00)." };
       }
     }
-    return true;
+  
+    return { disponible: true };
   };
 
 
@@ -166,6 +196,7 @@ const Calendrier = () => {
     setCreneauSurvole(null);
   };
 
+
   const gererClicCreneau = (jour, heure) => {
     if (!estAuthentifie) {
       alert('Vous devez être authentifié en tant qu\'administrateur pour créer un horaire.');
@@ -184,11 +215,14 @@ const Calendrier = () => {
 
     const heuresConsecutives = filtres.duree?.id || 1;
 
-    if (!estCreneauDisponible(jour, heure, heuresConsecutives)) {
-      alert('Pas disponible');
-      //alert('Cette plage horaire n\'est pas disponible pour le nombre d\'heures demandé');
-      return;
-    }
+    const dispo = estCreneauDisponible(jour, heure, heuresConsecutives);
+if (!dispo.disponible) {
+  alert(dispo.raison || "Ce créneau n'est pas disponible.");
+  return;
+}
+
+
+
 
     // Vérifier la limite de 3 heures par semaine pour ce professeur, ce cours et ce groupe
     if (!validerLimiteCoursProfesseur(
@@ -205,12 +239,27 @@ const Calendrier = () => {
       return;
     }
 
+    if (!validerLimiteCoursGroupe(
+      creneauxParEtape,
+      etapeVueSelectionnee,
+      filtres.groupe,
+      filtres.cours,
+      heuresConsecutives
+    )) {
+      alert("Ce groupe fait déjà 3 heures pour ce cours cette semaine.");
+      return;
+    }
+    
+    
+    
+
     if (!respecteLimiteHeuresCoursProfesseurGroupe(
-        creneauxParEtape,
-        filtres.professeur,
-        filtres.cours,
-        filtres.groupe,
-        heuresConsecutives
+      creneauxParEtape,
+      etapeVueSelectionnee,
+      filtres.professeur.id,
+      filtres.groupe,
+      filtres.cours.id || filtres.cours._id,
+      heuresConsecutives
     )) {
       alert('Un professeur ne peut pas donner le même cours plus de 3 heures par semaine au même groupe.');
       return;
@@ -218,6 +267,34 @@ const Calendrier = () => {
 
 
     const nouveauxCreneaux = creerCreneauxConsecutifs(jour, heure, heuresConsecutives, filtres.professeur);
+
+
+    nouveauxCreneaux.forEach(creneau => {
+      fetch('http://localhost:5000/api/creneaux', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jour: creneau.jour,
+          heureDebut: creneau.heureDebut.replace(':00', ''),
+          heureFin: creneau.heureFin.replace(':00', ''),
+          professeur: creneau.professeur,
+          cours: creneau.cours,
+          groupe: creneau.groupe,
+          etapeId: etapeVueSelectionnee.id,
+          modeCours: creneau.modeCours || { id: '', nom: '', icone: '' }
+        })
+      })
+        .then(res => res.json())
+        .then(data => {
+          console.log("🟢 Creneau enregistré :", data);
+        })
+        .catch(err => {
+          console.error("❌ Erreur enregistrement creneau :", err);
+        });
+    });
+    
+
+    
 
     setCreneauxParEtape(prev => ({
       ...prev,
@@ -233,16 +310,23 @@ const Calendrier = () => {
     setCreneauSelectionne(null);
   };
 
-  const gererSuppressionCreneau = (creneauId) => {
+  const gererSuppressionCreneau = async (creneauId) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce créneau ?')) {
-      setCreneauxParEtape(prev => {
-        const creneauxMisAJour = { ...prev };
-        Object.keys(creneauxMisAJour).forEach(etapeId => {
-          creneauxMisAJour[etapeId] = creneauxMisAJour[etapeId].filter(creneau => creneau.id !== creneauId);
+      try {
+        await fetch(`http://localhost:5000/api/creneaux/${creneauId}`, {
+          method: 'DELETE',
         });
-        return creneauxMisAJour;
-      });
-      setCreneauSelectionne(null);
+        setCreneauxParEtape(prev => {
+          const creneauxMisAJour = { ...prev };
+          Object.keys(creneauxMisAJour).forEach(etapeId => {
+            creneauxMisAJour[etapeId] = creneauxMisAJour[etapeId].filter(creneau => creneau.id !== creneauId);
+          });
+          return creneauxMisAJour;
+        });
+        setCreneauSelectionne(null);
+      } catch (err) {
+        console.error("❌ Erreur suppression creneau :", err);
+      }
     }
   };
 
@@ -286,29 +370,50 @@ const Calendrier = () => {
     return '';
   };
 
-  const supprimerPlageReservation = (creneau) => {
+  const supprimerPlageReservation = async (creneau) => {
     if (confirm('Supprimer toute la plage horaire de cette réservation ?')) {
-      const heureDebut = parseInt(creneau.heureDebut);
-      const heureFin = parseInt(creneau.heureFin);
-
-      setCreneauxParEtape(prev => {
-        const maj = { ...prev };
-        maj[creneau.etape.id] = maj[creneau.etape.id].filter(c =>
-            !(
-                c.professeur.id === creneau.professeur.id &&
+      try {
+        const res = await fetch(`http://localhost:5000/api/creneaux/supprimer-plage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jour: creneau.jour,
+            professeurId: creneau.professeur.id,
+            coursId: creneau.cours.id,
+            groupe: creneau.groupe,
+            etapeId: creneau.etapeId
+          })
+        });
+  
+        const deleted = await res.json();
+        console.log('🗑️ Supprimés :', deleted);
+  
+        // Mise à jour côté client
+        setCreneauxParEtape(prev => {
+          const maj = { ...prev };
+          maj[etapeVueSelectionnee.id] = (maj[etapeVueSelectionnee.id] || []).filter(
+            c =>
+              !(
                 c.jour === creneau.jour &&
+                c.professeur.id === creneau.professeur.id &&
+                c.cours.id === creneau.cours.id &&
                 c.groupe === creneau.groupe &&
-                c.cours.code === creneau.cours.code &&
-                parseInt(c.heureDebut) >= heureDebut &&
-                parseInt(c.heureDebut) < heureFin
-            )
-        );
-        return maj;
-      });
-
-      setCreneauSelectionne(null);
+                c.etapeId === creneau.etapeId
+              )
+          );
+          return maj;
+        });
+  
+        setCreneauSelectionne(null);
+        alert('Plage supprimée avec succès ✅');
+      } catch (err) {
+        console.error("❌ Erreur suppression plage horaire :", err);
+        alert('Erreur lors de la suppression de la plage horaire');
+      }
     }
   };
+  
+
 
 
   const rendreCreneauxHoraires = (jour, heure) => {
@@ -362,9 +467,11 @@ const Calendrier = () => {
       <div className="flex-none p-6">
         <EnTeteCalendrier onChangementFiltre={gererChangementFiltre} filtres={filtres} />
         <SelecteurEtape
-          etapeSelectionnee={etapeVueSelectionnee}
-          onChangementEtape={gererChangementEtape}
-        />
+  etapeSelectionnee={etapeVueSelectionnee}
+  onChangementEtape={gererChangementEtape}
+  programmeId={filtres.programme?._id}
+/>
+
         
         {!etapeVueSelectionnee && (
           <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -401,11 +508,7 @@ const Calendrier = () => {
                   <div className="flex items-center space-x-2">
                     <Users className="w-4 h-4 text-gray-400"/>
                     <div className="flex items-center">
-                      <img
-                          src={creneauSelectionne.professeur.avatar}
-                          alt={creneauSelectionne.professeur.nom}
-                          className="w-6 h-6 rounded-full mr-2"
-                      />
+                     
                       <div>
                         <p className="text-sm font-medium text-gray-800">{creneauSelectionne.professeur.nom}</p>
                         <p className="text-xs text-gray-500">{creneauSelectionne.professeur.code}</p>

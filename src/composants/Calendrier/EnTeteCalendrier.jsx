@@ -158,7 +158,7 @@ const EnTeteCalendrier = ({ onChangementFiltre, filtres }) => {
           typeIcone="users"
         />
         <MenuDeroulant
-          libelle="Mode d'enseignement"
+          libelle="Mode de Livraison"
           options={modesEnseignement}
           valeur={filtres?.modeCours ? `${filtres.modeCours.icone} ${filtres.modeCours.nom}` : ''}
           onChange={gererChangementModeCours}

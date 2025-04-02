@@ -40,19 +40,16 @@ const CreneauHoraire = ({
         {/* Prof */}
         <div className="flex items-center text-sm text-gray-700 mb-1">
           <User2 className="w-4 h-4 mr-1 text-gray-500" />
-          <img
-              src={professeur.avatar}
-              alt={professeur.nom}
-              className="w-5 h-5 rounded-full mr-2"
-          />
+         
           {professeur.nom}
         </div>
 
         {/* Cours, groupe, mode */}
         <div className="flex items-center text-xs text-gray-600">
-          <BookOpen className="w-4 h-4 mr-1 text-gray-500" />
-          {cours.code} • {modeCours.icone} {modeCours.nom} • G{groupe}
-        </div>
+  <BookOpen className="w-4 h-4 mr-1 text-gray-500" />
+  {cours?.code} • {modeCours?.icone || ''} {modeCours?.nom || 'Mode ?'} • {groupe}
+</div>
+
 
         {/* Icône de suppression */}
         <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition">
