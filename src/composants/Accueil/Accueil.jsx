@@ -5,6 +5,7 @@ import {Link} from 'react-router-dom'
 import "@mobiscroll/react-lite/dist/css/mobiscroll.min.css"; // Ajoute les styles Mobiscroll
 import BasicDateCalendar from './BasicDateCalendar';
 import { DateCalendar } from '@mui/x-date-pickers';
+import { use } from 'react';
 
 
 
@@ -38,25 +39,31 @@ useEffect(() => {
     .catch(err => console.error("Erreur chargement professeurs", err))
 }, []);
 
-// Calculer les indices pour la pagination
-const indexDernierCours = pageActuelle * coursParPage;
-const indexPremierCours = indexDernierCours - coursParPage;
 
 // Filtrer les cours en fonction de la recherche, du programme et de l'étape
 const coursFiltres = cours.filter(c =>
-  (programmeSelectionne ? c.programmeId === programmeSelectionne : true) &&
-  (etapeSelectionnee ? c.etapeId === etapeSelectionnee : true) &&
+  //(programmeSelectionne ? c.programmeId === programmeSelectionne : false) &&
+  (etapeSelectionnee ? c.etapeId === etapeSelectionnee : false) &&
   (rechercheQuery
     ? c.code.toLowerCase().includes(rechercheQuery.toLowerCase()) ||
       c.nom.toLowerCase().includes(rechercheQuery.toLowerCase())
     : true)
 );
-
-const nombreProfesseursParProgramme = professeurs.filter(prof => prof.programme ==programme.nom).length;
 // Cours visibles sur la page actuelle
-const coursVisibles = coursFiltres.slice(indexPremierCours, indexDernierCours);
-const totalPages = Math.ceil(coursFiltres.length / coursParPage);
+const totalPages = Math.max(1, Math.ceil(coursFiltres.length / coursParPage));
 
+// Calculer les indices pour la pagination
+const indexDernierCours = Math.min(pageActuelle * coursParPage, coursFiltres.length);
+const indexPremierCours = (pageActuelle - 1) * coursParPage;
+const coursVisibles = coursFiltres.slice(indexPremierCours, indexDernierCours);
+
+const nombreProfesseursParProgramme = professeurs.filter(prof => prof.programme==programmes.nom).length;
+
+useEffect(() =>{
+  if(pageActuelle > totalPages){
+    setPageActuelle(1);
+  }
+}, [coursFiltres, totalPages])
 
 return(
     
@@ -110,7 +117,7 @@ return(
 
 {/* Barre de recherche */}
 <div className='Recherche'>
-  <div className='carre'></div>
+  <div className='carre'>Cours du programme</div>
   <div className='Recherche_carre'>
   <input
 
@@ -124,17 +131,29 @@ return(
 </div>
 
 {/* Affichage des cours */}
+{programmeSelectionne && etapeSelectionnee ?(
+coursVisibles.length > 0 ?(
 <div className='affichage_selection'>
   {coursVisibles.map((cours) => (
-    <div key={cours._id} className="cours-card">
+    <div key={cours._id} className="cours">
       <h3>{cours.nom}</h3>
       <p>Code: {cours.code}</p>
       <p>Crédits: {cours.credits}</p>
     </div>
   ))}
 </div>
+):(
+  <p>
+    Aucun cours trouve pour ce programme et cette etape.
+  </p>
+)):(
+  <p>
+  veillez selectionner un programme et une etape pour afficher les cours.
+</p>
+)}
 
-{/* Pagination */}
+{/* Pagination 
+
 <div className='affiche_1_semaine'>
   <button
     disabled={pageActuelle === 1}
@@ -150,7 +169,7 @@ return(
     {">"}
   </button>
 </div>
-
+*/}
             </div>
             <div className='block_2'>
                 <div className='calendar'>
@@ -158,13 +177,13 @@ return(
                 </div>
                 <div className="affiche_1_semaine"> 
                 <button>  </button>
-                <span> {programmeSelectionne} </span>
+                <span> {programmes.find(p => p._id === programmeSelectionne)?.nom || ''} </span>
                 <button>  </button>
                 </div>
                 
                 <div className='affichage_nombreProf_nombreChreno'>
                     <div className='nombreProf'>
-                        <p>Nombre total de professeur actif </p>
+                        <p>Nombre total de professeur actif de l'ITAC </p>
                         <h1>{professeurs.length}</h1>
                     </div>
 

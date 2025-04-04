@@ -49,11 +49,13 @@
 
     .block_1{
         margin: 8px;
-        padding: 10px;
+        padding: 8px;
         width: 100%;
         height: 100%;
         //background-color: rgb(94, 180, 118);
-
+        h1{
+            font-weight: bold;
+        }
         .Selction_niveau1{
             margin: 8px;
             display: grid;
@@ -82,6 +84,7 @@
         height: 65%;
         margin: 0 auto;
         padding: 24px;
+        overflow-y: auto;
         border: solid 1px;
         justify-items: center;
         border-radius: 24px;
@@ -125,7 +128,11 @@
             padding: 0;
             margin:20px; 
             margin-right: auto;
-           
+           .carre{
+            
+            font-size: 32px;
+            font-weight: bold;
+           }
             .Recherche_carre{ 
                 display: flex;
                 position: relative;
