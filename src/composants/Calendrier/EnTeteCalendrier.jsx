@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, Users, BookOpen, GraduationCap, Clock, Blend } from 'lucide-react';
-import { professeurs, modesEnseignement, durees } from '../../donnees/donneesMock';
+import { modesEnseignement, durees } from '../../donnees/donneesMock';
 
 const obtenirComposantIcone = (typeIcone, className = "w-4 h-4") => {
   switch (typeIcone) {
@@ -66,6 +66,7 @@ const EnTeteCalendrier = ({ onChangementFiltre, filtres }) => {
   const [etapesFiltrees, setEtapesFiltrees] = useState([]);
   const [programmesBD, setProgrammesBD] = useState([]);
   const [coursBD, setCoursBD] = useState([]);
+  const [professeursBD, setProfesseursBD] = useState([]);
 
   useEffect(() => {
     const fetchProgrammes = async () => {
@@ -80,8 +81,25 @@ const EnTeteCalendrier = ({ onChangementFiltre, filtres }) => {
       setCoursBD(data);
     };
 
+    const fetchProfesseurs = async () => {
+      const res = await fetch('http://localhost:5000/api/professeurs');
+      const data = await res.json();
+      // Adapter le format pour correspondre à l'ancien format utilisé
+      const professeursFormates = data.map(prof => ({
+        id: prof._id,
+        code: prof.code,
+        nom: prof.nom,
+        email: prof.email,
+        heuresMax: prof.heuresMax,
+        avatar: prof.avatar || `https://i.pravatar.cc/150?u=${prof._id}`,
+        typeIcone: 'users'
+      }));
+      setProfesseursBD(professeursFormates);
+    };
+
     fetchProgrammes();
     fetchCours();
+    fetchProfesseurs();
   }, []);
 
   const gererChangementProgramme = (programme) => {
@@ -152,7 +170,7 @@ const EnTeteCalendrier = ({ onChangementFiltre, filtres }) => {
         />
         <MenuDeroulant
           libelle="Professeur"
-          options={professeurs}
+          options={professeursBD}
           valeur={filtres?.professeur ? `${filtres.professeur.code} - ${filtres.professeur.nom}` : ''}
           onChange={gererChangementProfesseur}
           typeIcone="users"

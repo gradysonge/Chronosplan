@@ -14,6 +14,7 @@ const GestionProfesseurs = () => {
     email: '',
     heuresMax: 20
   });
+  const [creneauxProfesseur, setCreneauxProfesseur] = useState([]);
 
   // Chargement des données initiales
   useEffect(() => {
@@ -25,6 +26,62 @@ const GestionProfesseurs = () => {
         .catch(err => console.error("Erreur chargement professeurs", err));
   }, []);
 
+  // Chargement des créneaux du professeur sélectionné
+  useEffect(() => {
+    if (professeurSelectionne) {
+      chargerCreneauxProfesseur(professeurSelectionne._id);
+    } else {
+      setCreneauxProfesseur([]);
+    }
+  }, [professeurSelectionne]);
+
+  // Fonction pour charger les créneaux d'un professeur
+  const chargerCreneauxProfesseur = (professeurId) => {
+    fetch(`http://localhost:5000/api/creneaux?professeurId=${professeurId}`)
+      .then(res => res.json())
+      .then(data => {
+        setCreneauxProfesseur(data);
+      })
+      .catch(err => console.error("Erreur chargement créneaux du professeur", err));
+  };
+
+  // Écouter les événements de modification des créneaux
+  useEffect(() => {
+    // Fonction pour gérer l'ajout d'un créneau
+    const handleCreneauAjoute = (event) => {
+      const { professeurId } = event.detail;
+      if (professeurSelectionne && professeurSelectionne._id === professeurId) {
+        chargerCreneauxProfesseur(professeurId);
+      }
+    };
+
+    // Fonction pour gérer la suppression d'un créneau
+    const handleCreneauSupprime = () => {
+      if (professeurSelectionne) {
+        chargerCreneauxProfesseur(professeurSelectionne._id);
+      }
+    };
+
+    // Fonction pour gérer la suppression d'une plage
+    const handlePlageSupprimee = (event) => {
+      const { professeurId } = event.detail;
+      if (professeurSelectionne && professeurSelectionne._id === professeurId) {
+        chargerCreneauxProfesseur(professeurId);
+      }
+    };
+
+    // Ajouter les écouteurs d'événements
+    window.addEventListener('creneauAjoute', handleCreneauAjoute);
+    window.addEventListener('creneauSupprime', handleCreneauSupprime);
+    window.addEventListener('plageSupprimee', handlePlageSupprimee);
+
+    // Nettoyer les écouteurs d'événements lors du démontage du composant
+    return () => {
+      window.removeEventListener('creneauAjoute', handleCreneauAjoute);
+      window.removeEventListener('creneauSupprime', handleCreneauSupprime);
+      window.removeEventListener('plageSupprimee', handlePlageSupprimee);
+    };
+  }, [professeurSelectionne]);
 
   const genererDisponibilitesAleatoires = () => {
     const jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
@@ -179,6 +236,36 @@ const GestionProfesseurs = () => {
     
     setProfesseurs(professeursMAJ);
     setProfesseurSelectionne(professeursMAJ.find(p => p._id === professeurSelectionne._id));
+  };
+
+  // Fonction pour vérifier si un professeur a un créneau à une heure et un jour spécifiques
+  const professeurACreneauA = (jour, heure) => {
+    if (!creneauxProfesseur.length) return false;
+    
+    return creneauxProfesseur.some(creneau => 
+      creneau.jour === jour && 
+      parseInt(creneau.heureDebut) <= heure && 
+      parseInt(creneau.heureFin) > heure
+    );
+  };
+
+  // Fonction pour obtenir les détails d'un créneau à une heure et un jour spécifiques
+  const obtenirDetailsCreneauA = (jour, heure) => {
+    if (!creneauxProfesseur.length) return null;
+    
+    const creneau = creneauxProfesseur.find(c => 
+      c.jour === jour && 
+      parseInt(c.heureDebut) <= heure && 
+      parseInt(c.heureFin) > heure
+    );
+    
+    if (!creneau) return null;
+    
+    return {
+      cours: creneau.cours.code,
+      groupe: creneau.groupe,
+      mode: creneau.modeCours?.nom || 'Non spécifié'
+    };
   };
 
   const exporterEmploiDuTemps = () => {
@@ -469,41 +556,46 @@ const GestionProfesseurs = () => {
               <div className="mb-4">
                 <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
                   <Calendar className="w-4 h-4 mr-1 text-emerald-600" />
-                  Disponibilités
+                  Emploi du temps
                 </h4>
                 <p className="text-xs text-gray-500 mb-2">
-                  Cliquez sur les créneaux pour modifier les disponibilités
+                  Créneaux attribués à ce professeur
                 </p>
                 
                 <div className="border rounded-lg overflow-hidden">
-                  <div className="grid grid-cols-4 text-xs font-medium text-gray-700 bg-gray-50 border-b">
-                    <div className="p-2 border-r">Jour</div>
-                    <div className="p-2 border-r">Matin</div>
-                    <div className="p-2 border-r">Après-midi</div>
-                    <div className="p-2">Soir</div>
+                  <div className="grid grid-cols-6 text-xs font-medium text-gray-700 bg-gray-50 border-b">
+                    <div className="p-2 border-r">Heure</div>
+                    <div className="p-2 border-r">Lundi</div>
+                    <div className="p-2 border-r">Mardi</div>
+                    <div className="p-2 border-r">Mercredi</div>
+                    <div className="p-2 border-r">Jeudi</div>
+                    <div className="p-2">Vendredi</div>
                   </div>
                   
-                  {['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'].map((jour) => (
-                    <div key={jour} className="grid grid-cols-4 text-xs border-b last:border-b-0">
-                      <div className="p-2 border-r font-medium bg-gray-50">{jour}</div>
-                      <div 
-                        className={`p-2 border-r cursor-pointer ${obtenirCouleurDisponibilite(jour, '8:00 - 12:00')}`}
-                        onClick={() => basculerDisponibilite(jour, '8:00 - 12:00')}
-                      >
-                        8:00 - 12:00
-                      </div>
-                      <div 
-                        className={`p-2 border-r cursor-pointer ${obtenirCouleurDisponibilite(jour, '13:00 - 17:00')}`}
-                        onClick={() => basculerDisponibilite(jour, '13:00 - 17:00')}
-                      >
-                        13:00 - 17:00
-                      </div>
-                      <div 
-                        className={`p-2 cursor-pointer ${obtenirCouleurDisponibilite(jour, '18:00 - 21:00')}`}
-                        onClick={() => basculerDisponibilite(jour, '18:00 - 21:00')}
-                      >
-                        18:00 - 21:00
-                      </div>
+                  {Array.from({ length: 14 }, (_, i) => i + 8).map((heure) => (
+                    <div key={heure} className="grid grid-cols-6 text-xs border-b last:border-b-0">
+                      <div className="p-2 border-r font-medium bg-gray-50">{heure}:00</div>
+                      {['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'].map((jour) => {
+                        const aCreneau = professeurACreneauA(jour, heure);
+                        const detailsCreneau = obtenirDetailsCreneauA(jour, heure);
+                        
+                        return (
+                          <div 
+                            key={`${jour}-${heure}`}
+                            className={`p-2 border-r last:border-r-0 ${
+                              aCreneau ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-50 text-gray-400'
+                            }`}
+                            title={detailsCreneau ? `${detailsCreneau.cours} - ${detailsCreneau.groupe} (${detailsCreneau.mode})` : ''}
+                          >
+                            {aCreneau ? (
+                              <div className="text-xs">
+                                <div className="font-medium">{detailsCreneau.cours}</div>
+                                <div>{detailsCreneau.groupe}</div>
+                              </div>
+                            ) : ''}
+                          </div>
+                        );
+                      })}
                     </div>
                   ))}
                 </div>
@@ -548,3 +640,4 @@ const GestionProfesseurs = () => {
 };
 
 export default GestionProfesseurs;
+

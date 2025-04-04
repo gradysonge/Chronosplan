@@ -20,6 +20,27 @@ exports.getCreneauxParEtape = async (req, res) => {
   }
 };
 
+// Récupérer les créneaux par professeur
+exports.getCreneauxParProfesseur = async (req, res) => {
+  try {
+    const professeurId = req.query.professeurId;
+    if (!professeurId) {
+      return res.status(400).json({ error: "L'ID du professeur est requis" });
+    }
+    
+    // Rechercher par professeur.id ou professeur._id pour assurer la compatibilité
+    const creneaux = await Creneau.find({
+      $or: [
+        { 'professeur.id': professeurId },
+        { 'professeur._id': professeurId }
+      ]
+    });
+    
+    res.json(creneaux);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
 exports.supprimerCreneau = async (req, res) => {
   try {
@@ -36,8 +57,14 @@ exports.supprimerPlageCreneaux = async (req, res) => {
 
     const result = await Creneau.deleteMany({
       jour,
-      'professeur.id': professeurId,
-      'cours.id': coursId,
+      $or: [
+        { 'professeur.id': professeurId },
+        { 'professeur._id': professeurId }
+      ],
+      $or: [
+        { 'cours.id': coursId },
+        { 'cours._id': coursId }
+      ],
       groupe,
       etapeId
     });
