@@ -29,6 +29,7 @@ app.use('/api/cours', coursRoutes);
 app.use('/api/creneaux', require('./routes/creneauRoutes'));
 
 
+
 // Connexion à MongoDB
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('MongoDB connecté 🎉'))

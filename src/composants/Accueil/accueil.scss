@@ -49,12 +49,15 @@
 
     .block_1{
         margin: 8px;
-        padding: 10px;
+        padding: 8px;
         width: 100%;
         height: 100%;
         //background-color: rgb(94, 180, 118);
-
+        h1{
+            font-weight: bold;
+        }
         .Selction_niveau1{
+            margin: 8px;
             display: grid;
             grid-template-columns: 1.5fr 1fr;
         select{
@@ -78,9 +81,10 @@
     }
     .affichage_selection{
         width: 95%;
-        height: 70%;
+        height: 65%;
         margin: 0 auto;
         padding: 24px;
+        overflow-y: auto;
         border: solid 1px;
         justify-items: center;
         border-radius: 24px;
@@ -95,6 +99,52 @@
             background-color: aqua;
         }
     }
+        .affiche_1_semaine{
+            background-color: white;
+            text-align: center;
+            justify-items: center;
+            text-align: center;
+            
+            margin: 10px;
+            padding: 10px;
+            width:  95%;
+            height: 50px;
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: 1fr 5fr 1fr;
+            span{
+                font-weight: bold;
+                justify-content: center;
+            }
+            button{
+                font-weight: bold;
+                font-size: larger;
+            }
+        }
+        .Recherche {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0;
+            margin:20px; 
+            margin-right: auto;
+           .carre{
+            
+            font-size: 32px;
+            font-weight: bold;
+           }
+            .Recherche_carre{ 
+                display: flex;
+                position: relative;
+                align-items: center;
+                padding: 0;
+                input{
+                    width: 300px;
+                    padding: 3px;
+                    border-radius: 10px;
+                }
+            }
+        }
     }
     .block_2{
         margin: 8px;
