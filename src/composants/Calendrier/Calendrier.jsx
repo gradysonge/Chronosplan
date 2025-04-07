@@ -4,35 +4,43 @@ import CreneauHoraire from './CreneauHoraire';
 import SelecteurEtape from './SelecteurEtape';
 import StatistiquesProfesseur from './StatistiquesProfesseur';
 import { ContexteAuth } from '../../contexte/Authentification';
-import { professeurs } from '../../donnees/donneesMock';
-import { X, Clock, BookOpen, Users, Monitor, Blend, Trash2 } from 'lucide-react';
+import { X, Clock, BookOpen, Users, Monitor, Blend, Trash2, XCircle } from 'lucide-react';
 import { validerLimiteCoursProfesseur, respecteLimiteHeuresCoursProfesseurGroupe, validerLimiteCoursGroupe  } from '../../utils/Contraintes';
 
 
 const joursDelaSemaine = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
 const heures = Array.from({ length: 15 }, (_, i) => i + 8); // 8:00 to 22:00
 
-const couleursProfesseurs = {
-  P1: { bg: 'bg-blue-100 hover:bg-blue-200', badge: 'bg-blue-500' },
-  P2: { bg: 'bg-green-100 hover:bg-green-200', badge: 'bg-green-500' },
-  P3: { bg: 'bg-purple-100 hover:bg-purple-200', badge: 'bg-purple-500' },
-  P4: { bg: 'bg-orange-100 hover:bg-orange-200', badge: 'bg-orange-500' },
-  P5: { bg: 'bg-pink-100 hover:bg-pink-200', badge: 'bg-pink-500' },
-  P6: { bg: 'bg-yellow-100 hover:bg-yellow-200', badge: 'bg-yellow-500' },
-  P7: { bg: 'bg-indigo-100 hover:bg-indigo-200', badge: 'bg-indigo-500' },
-  P8: { bg: 'bg-red-100 hover:bg-red-200', badge: 'bg-red-500' },
-  P9: { bg: 'bg-teal-100 hover:bg-teal-200', badge: 'bg-teal-500' },
-  P10: { bg: 'bg-cyan-100 hover:bg-cyan-200', badge: 'bg-cyan-500' },
-  P11: { bg: 'bg-lime-100 hover:bg-lime-200', badge: 'bg-lime-500' },
-  P12: { bg: 'bg-amber-100 hover:bg-amber-200', badge: 'bg-amber-500' },
-  P13: { bg: 'bg-emerald-100 hover:bg-emerald-200', badge: 'bg-emerald-500' },
-  P14: { bg: 'bg-fuchsia-100 hover:bg-fuchsia-200', badge: 'bg-fuchsia-500' },
-  P15: { bg: 'bg-rose-100 hover:bg-rose-200', badge: 'bg-rose-500' },
-  P16: { bg: 'bg-violet-100 hover:bg-violet-200', badge: 'bg-violet-500' },
-  P17: { bg: 'bg-sky-100 hover:bg-sky-200', badge: 'bg-sky-500' },
-  P18: { bg: 'bg-stone-100 hover:bg-stone-200', badge: 'bg-stone-500' },
-  P19: { bg: 'bg-zinc-100 hover:bg-zinc-200', badge: 'bg-zinc-500' },
-  P20: { bg: 'bg-gray-100 hover:bg-gray-200', badge: 'bg-gray-500' },
+// Définition des couleurs pour les professeurs
+const generateurCouleursProfesseurs = () => {
+  const couleurs = {
+    'default': { bg: 'bg-gray-100 hover:bg-gray-200', badge: 'bg-gray-500' }
+  };
+  
+  const basesCouleurs = [
+    { bg: 'bg-blue-100 hover:bg-blue-200', badge: 'bg-blue-500' },
+    { bg: 'bg-green-100 hover:bg-green-200', badge: 'bg-green-500' },
+    { bg: 'bg-purple-100 hover:bg-purple-200', badge: 'bg-purple-500' },
+    { bg: 'bg-orange-100 hover:bg-orange-200', badge: 'bg-orange-500' },
+    { bg: 'bg-pink-100 hover:bg-pink-200', badge: 'bg-pink-500' },
+    { bg: 'bg-yellow-100 hover:bg-yellow-200', badge: 'bg-yellow-500' },
+    { bg: 'bg-indigo-100 hover:bg-indigo-200', badge: 'bg-indigo-500' },
+    { bg: 'bg-red-100 hover:bg-red-200', badge: 'bg-red-500' },
+    { bg: 'bg-teal-100 hover:bg-teal-200', badge: 'bg-teal-500' },
+    { bg: 'bg-cyan-100 hover:bg-cyan-200', badge: 'bg-cyan-500' },
+    { bg: 'bg-lime-100 hover:bg-lime-200', badge: 'bg-lime-500' },
+    { bg: 'bg-amber-100 hover:bg-amber-200', badge: 'bg-amber-500' },
+    { bg: 'bg-emerald-100 hover:bg-emerald-200', badge: 'bg-emerald-500' },
+    { bg: 'bg-fuchsia-100 hover:bg-fuchsia-200', badge: 'bg-fuchsia-500' },
+    { bg: 'bg-rose-100 hover:bg-rose-200', badge: 'bg-rose-500' },
+    { bg: 'bg-violet-100 hover:bg-violet-200', badge: 'bg-violet-500' },
+    { bg: 'bg-sky-100 hover:bg-sky-200', badge: 'bg-sky-500' },
+    { bg: 'bg-stone-100 hover:bg-stone-200', badge: 'bg-stone-500' },
+    { bg: 'bg-zinc-100 hover:bg-zinc-200', badge: 'bg-zinc-500' },
+    { bg: 'bg-gray-100 hover:bg-gray-200', badge: 'bg-gray-500' },
+  ];
+  
+  return { couleurs, basesCouleurs };
 };
 
 const Calendrier = () => {
@@ -49,60 +57,87 @@ const Calendrier = () => {
   const [etapeVueSelectionnee, setEtapeVueSelectionnee] = useState(null);
   const [creneauSurvole, setCreneauSurvole] = useState(null);
   const [creneauSelectionne, setCreneauSelectionne] = useState(null);
+  const [professeursBD, setProfesseursBD] = useState([]);
+  const [couleursProfesseurs, setCouleursProfesseurs] = useState({});
+  const [raisonIndisponibilite, setRaisonIndisponibilite] = useState(null);
 
-    useEffect(() => {
-      if (!etapeVueSelectionnee) return;
-    
-      fetch(`http://localhost:5000/api/creneaux/${etapeVueSelectionnee.id}`)
-        .then(res => res.json())
-        .then(data => {
-          const creneauxFormates = data.map(c => ({
-            id: c._id, // Utilisez l'ID généré par MongoDB
-            jour: c.jour,
-            heureDebut: `${c.heureDebut}:00`,
-            heureFin: `${c.heureFin}:00`,
-            professeur: c.professeur,
-            cours: c.cours,
-            groupe: c.groupe,
-            etapeId: c.etapeId,
-            modeCours: c.modeCours || { id: '', nom: '', icone: '' },
-            couleur: couleursProfesseurs[c.professeur.id] // Ajoutez la couleur basée sur l'ID du professeur
-          }));
-    
-          setCreneauxParEtape(prev => ({
-            ...prev,
-            [etapeVueSelectionnee.id]: creneauxFormates
-          }));
-        })
-        .catch(err => {
-          console.error("❌ Erreur chargement des créneaux :", err);
+  // Récupération des professeurs depuis l'API
+  useEffect(() => {
+    fetch('http://localhost:5000/api/professeurs')
+      .then(res => res.json())
+      .then(data => {
+        setProfesseursBD(data);
+        
+        // Générer les couleurs pour chaque professeur
+        const { couleurs, basesCouleurs } = generateurCouleursProfesseurs();
+        const couleursMAJ = { ...couleurs };
+        
+        data.forEach((prof, index) => {
+          const couleurIndex = index % basesCouleurs.length;
+          couleursMAJ[prof._id] = basesCouleurs[couleurIndex];
         });
-    }, [etapeVueSelectionnee]); // Supprimez creneauxParEtape des dépendances
-  
-
-    const regrouperCreneauxConsecutifs = (creneaux) => {
-      const groupes = [];
-    
-      creneaux.forEach((creneau) => {
-        const groupeCourant = groupes.find((groupe) =>
-          groupe.professeur.id === creneau.professeur.id &&
-          groupe.cours.id === creneau.cours.id &&
-          groupe.groupe === creneau.groupe &&
-          (groupe.modeCours?.id || '') === (creneau.modeCours?.id || '') &&
-          groupe.jour === creneau.jour &&
-          parseInt(groupe.heureFin) === parseInt(creneau.heureDebut)
-        );
-    
-        if (groupeCourant) {
-          groupeCourant.heureFin = creneau.heureFin;
-        } else {
-          groupes.push({ ...creneau });
-        }
+        
+        setCouleursProfesseurs(couleursMAJ);
+      })
+      .catch(err => {
+        console.error("Erreur chargement professeurs", err);
       });
-    
-      return groupes;
-    };
+  }, []);
+
+  useEffect(() => {
+    if (!etapeVueSelectionnee) return;
   
+    fetch(`http://localhost:5000/api/creneaux/${etapeVueSelectionnee.id}`)
+      .then(res => res.json())
+      .then(data => {
+        const creneauxFormates = data.map(c => ({
+          id: c._id, // Utilisez l'ID généré par MongoDB
+          jour: c.jour,
+          heureDebut: `${c.heureDebut}:00`,
+          heureFin: `${c.heureFin}:00`,
+          professeur: c.professeur,
+          cours: c.cours,
+          groupe: c.groupe,
+          etapeId: c.etapeId,
+          etape: { id: c.etapeId, nom: `Étape ${c.etapeId}` }, // Ajout pour les statistiques
+          modeCours: c.modeCours || { id: '', nom: '', icone: '' },
+          couleur: couleursProfesseurs[c.professeur.id] || couleursProfesseurs['default'] // Utiliser la couleur du professeur ou une couleur par défaut
+        }));
+  
+        setCreneauxParEtape(prev => ({
+          ...prev,
+          [etapeVueSelectionnee.id]: creneauxFormates
+        }));
+      })
+      .catch(err => {
+        console.error("❌ Erreur chargement des créneaux :", err);
+      });
+  }, [etapeVueSelectionnee, couleursProfesseurs]); // Ajout de couleursProfesseurs comme dépendance
+
+
+  const regrouperCreneauxConsecutifs = (creneaux) => {
+    const groupes = [];
+  
+    creneaux.forEach((creneau) => {
+      const groupeCourant = groupes.find((groupe) =>
+        groupe.professeur.id === creneau.professeur.id &&
+        groupe.cours.id === creneau.cours.id &&
+        groupe.groupe === creneau.groupe &&
+        (groupe.modeCours?.id || '') === (creneau.modeCours?.id || '') &&
+        groupe.jour === creneau.jour &&
+        parseInt(groupe.heureFin) === parseInt(creneau.heureDebut)
+      );
+  
+      if (groupeCourant) {
+        groupeCourant.heureFin = creneau.heureFin;
+      } else {
+        groupes.push({ ...creneau });
+      }
+    });
+  
+    return groupes;
+  };
+
 
   const gererChangementFiltre = (nouveauxFiltres) => {
     setFiltres({ ...filtres, ...nouveauxFiltres });
@@ -111,23 +146,84 @@ const Calendrier = () => {
     }
   };
 
-  const estCreneauDisponible = (jour, heure, heuresConsecutives = 1) => {
-    for (let i = 0; i < heuresConsecutives; i++) {
-      const creneauxEtapeActuelle = creneauxParEtape[etapeVueSelectionnee?.id] || [];
-
-      const creneauxConflictuels = creneauxEtapeActuelle.filter(creneau =>
-          creneau.jour === jour &&
-          parseInt(creneau.heureDebut) === (heure + i) &&
-          creneau.cours.code === filtres.cours?.code
+  // Fonction pour compter les heures consécutives d'un professeur pour un cours donné
+  const compterHeuresConsecutives = (creneaux, professeurId, coursId, jour, heureDebut) => {
+    let heuresConsecutives = 0;
+    let heure = heureDebut;
+    
+    while (true) {
+      const creneauExistant = creneaux.find(
+        creneau => 
+          creneau.jour === jour && 
+          parseInt(creneau.heureDebut) === heure &&
+          creneau.professeur.id === professeurId &&
+          creneau.cours.id === coursId
       );
-
-      if (creneauxConflictuels.length >= 2 ||
-          creneauxConflictuels.some(creneau => creneau.modeCours.id === filtres.modeCours?.id)) {
-        return false;
+      
+      if (creneauExistant) {
+        heuresConsecutives++;
+        heure++;
+      } else {
+        break;
       }
+    }
+    
+    return heuresConsecutives;
+  };
 
+  // Fonction pour compter les heures totales d'un professeur pour un cours et un groupe donnés par semaine
+  const compterHeuresParSemaine = (creneaux, professeurId, coursId, groupe) => {
+    return creneaux.filter(
+      creneau => 
+        creneau.professeur.id === professeurId &&
+        creneau.cours.id === coursId &&
+        creneau.groupe === groupe
+    ).length;
+  };
 
-      // Nouvelle vérification dans TOUTES les étapes (professeur occupé globalement)
+  const estCreneauDisponible = (jour, heure, heuresConsecutives = 1) => {
+    const creneauxEtapeActuelle = creneauxParEtape[etapeVueSelectionnee?.id] || [];
+  
+    // Vérification globale : cumuler les heures déjà programmées pour ce cours et ce groupe
+    if (filtres.cours && filtres.groupe) {
+      const totalHeuresCoursGroupe = creneauxEtapeActuelle
+        .filter(creneau =>
+          creneau.cours.code === filtres.cours.code &&
+          creneau.groupe === filtres.groupe
+        )
+        .reduce((acc, creneau) => {
+          return acc + (parseInt(creneau.heureFin) - parseInt(creneau.heureDebut));
+        }, 0);
+      
+      if (totalHeuresCoursGroupe + heuresConsecutives > 3) {
+        return { disponible: false, raison: "Ce groupe a déjà atteint la limite de 3 heures pour ce cours cette semaine." };
+      }
+    }
+  
+    for (let i = 0; i < heuresConsecutives; i++) {
+      // Créneaux déjà programmés pour le même jour, même heure et même cours
+      const creneauxConflictuels = creneauxEtapeActuelle.filter(creneau =>
+        creneau.jour === jour &&
+        parseInt(creneau.heureDebut) === (heure + i) &&
+        creneau.cours.code === filtres.cours?.code
+      );
+      
+      // 1. Vérifier si le professeur est déjà programmé pour ce cours à cet horaire.
+      if (creneauxConflictuels.some(creneau => creneau.professeur.id === filtres.professeur?.id)) {
+        return { disponible: false, raison: "Ce professeur a déjà un cours de ce type à ce moment." };
+      }
+      
+      // 2. S'il y a déjà un créneau et que le groupe est identique, ce n'est pas autorisé.
+      if (creneauxConflictuels.length === 1 && creneauxConflictuels[0].groupe === filtres.groupe) {
+        return { disponible: false, raison: "Ce groupe a déjà ce cours à ce moment." };
+      }
+      
+      // 3. Refuser l'ajout si deux créneaux existent déjà (même cours, même horaire)
+      if (creneauxConflictuels.length >= 2) {
+        return { disponible: false, raison: "Deux instances de ce cours sont déjà programmées simultanément." };
+      }
+  
+      // Vérification du groupe occupé à cet horaire (indépendamment du cours)
       const groupeOccupe = creneauxEtapeActuelle.some(creneau =>
         creneau.jour === jour &&
         parseInt(creneau.heureDebut) === (heure + i) &&
@@ -136,8 +232,8 @@ const Calendrier = () => {
       if (groupeOccupe) {
         return { disponible: false, raison: "Ce groupe d'étudiants est déjà en cours à ce moment-là." };
       }
-  
-      // ⚠️ Professeur déjà occupé (toutes étapes)
+    
+      // Vérification globale : le professeur ne doit pas être occupé ailleurs (toutes étapes confondues)
       const professeurOccupeGlobalement = Object.values(creneauxParEtape).some(creneauxEtape =>
         creneauxEtape.some(creneau =>
           creneau.jour === jour &&
@@ -148,15 +244,35 @@ const Calendrier = () => {
       if (professeurOccupeGlobalement) {
         return { disponible: false, raison: "Ce professeur a déjà un cours à ce moment-là." };
       }
-  
-      // ⚠️ Heures autorisées
+    
+      // Vérifier que l'heure ne dépasse pas la limite autorisée (22h00)
       if (heure + i >= 22) {
         return { disponible: false, raison: "L'horaire dépasse la limite autorisée (22h00)." };
       }
-    }
   
+      // Vérification des heures consécutives (max 3h)
+      if (filtres.professeur && filtres.cours) {
+        const heuresConsecutivesExistantes = compterHeuresConsecutives(
+          creneauxEtapeActuelle, 
+          filtres.professeur.id, 
+          filtres.cours.id, 
+          jour, 
+          heure - 1
+        );
+        
+        if (heuresConsecutivesExistantes + heuresConsecutives > 3) {
+          return { disponible: false, raison: "Un professeur ne peut pas donner plus de 3 heures consécutives du même cours." };
+        }
+      }
+    }
+    
     return { disponible: true };
   };
+  
+  
+  
+  
+
 
   const tousLesFiltresSelectionnes = () => {
     return filtres.professeur && filtres.cours && filtres.groupe && filtres.modeCours && filtres.etape && filtres.duree;
@@ -164,6 +280,8 @@ const Calendrier = () => {
 
   const creerCreneauxConsecutifs = (jour, heureDebut, heuresConsecutives, professeur) => {
     const nouveauxCreneaux = [];
+    const couleurProf = couleursProfesseurs[professeur.id] || couleursProfesseurs['default'];
+    
     for (let i = 0; i < heuresConsecutives; i++) {
       nouveauxCreneaux.push({
         id: `${jour}-${heureDebut + i}-${professeur.id}-${Date.now()}`,
@@ -174,9 +292,9 @@ const Calendrier = () => {
         cours: filtres.cours,
         groupe: filtres.groupe,
         modeCours: filtres.modeCours,
-        etapeId: filtres.etape.id, // Utiliser etapeId au lieu de etape
-        etape: filtres.etape, // Conserver etape pour l'utilisation côté client
-        couleur: couleursProfesseurs[professeur.id]
+        etape: filtres.etape,
+        etapeId: filtres.etape.id,
+        couleur: couleurProf
       });
     }
     return nouveauxCreneaux;
@@ -192,6 +310,7 @@ const Calendrier = () => {
       duree: null
     });
     setCreneauSurvole(null);
+    setRaisonIndisponibilite(null);
   };
 
 
@@ -214,14 +333,12 @@ const Calendrier = () => {
     const heuresConsecutives = filtres.duree?.id || 1;
 
     const dispo = estCreneauDisponible(jour, heure, heuresConsecutives);
-if (!dispo.disponible) {
-  alert(dispo.raison || "Ce créneau n'est pas disponible.");
-  return;
-}
+    if (!dispo.disponible) {
+      alert(dispo.raison || "Ce créneau n'est pas disponible.");
+      return;
+    }
 
-
-
-
+    // Vérifier la limite de 3 heures par semaine pour ce professeur, ce cours et ce groupe
     if (!validerLimiteCoursProfesseur(
       creneauxParEtape,
       etapeVueSelectionnee,
@@ -247,9 +364,6 @@ if (!dispo.disponible) {
       return;
     }
     
-    
-    
-
     if (!respecteLimiteHeuresCoursProfesseurGroupe(
       creneauxParEtape,
       etapeVueSelectionnee,
@@ -263,7 +377,6 @@ if (!dispo.disponible) {
     }
 
     const nouveauxCreneaux = creerCreneauxConsecutifs(jour, heure, heuresConsecutives, filtres.professeur);
-
 
     nouveauxCreneaux.forEach(creneau => {
       fetch('http://localhost:5000/api/creneaux', {
@@ -283,15 +396,21 @@ if (!dispo.disponible) {
         .then(res => res.json())
         .then(data => {
           console.log("🟢 Creneau enregistré :", data);
+          
+          // Déclencher un événement personnalisé pour notifier les autres composants
+          const event = new CustomEvent('creneauAjoute', { 
+            detail: { 
+              creneau: data,
+              professeurId: creneau.professeur.id
+            } 
+          });
+          window.dispatchEvent(event);
         })
         .catch(err => {
           console.error("❌ Erreur enregistrement creneau :", err);
         });
     });
     
-
-    
-
     setCreneauxParEtape(prev => ({
       ...prev,
       [etapeVueSelectionnee.id]: [...(prev[etapeVueSelectionnee.id] || []), ...nouveauxCreneaux]
@@ -320,6 +439,12 @@ if (!dispo.disponible) {
           return creneauxMisAJour;
         });
         setCreneauSelectionne(null);
+        
+        // Déclencher un événement personnalisé pour notifier les autres composants
+        const event = new CustomEvent('creneauSupprime', { 
+          detail: { creneauId } 
+        });
+        window.dispatchEvent(event);
       } catch (err) {
         console.error("❌ Erreur suppression creneau :", err);
       }
@@ -329,12 +454,9 @@ if (!dispo.disponible) {
   const creneauxEtapeActuelle = etapeVueSelectionnee ? (creneauxParEtape[etapeVueSelectionnee.id] || []) : [];
   const creneauxHorairesGroupes = regrouperCreneauxConsecutifs(creneauxEtapeActuelle);
 
-  const heuresVisibles = filtres.duree 
-    ? heures.filter(heure => {
-        const heuresConsecutives = filtres.duree.id;
-        return heure + heuresConsecutives <= 22;
-      })
-    : heures;
+  // Utiliser directement heures au lieu de filtrer avec heuresVisibles
+  // pour s'assurer que toutes les heures de 8h à 22h sont affichées
+  const heuresVisibles = heures;
 
   const estCreneauEnApercu = (jour, heure) => {
     if (!creneauSurvole || !filtres.duree) return false;
@@ -352,11 +474,15 @@ if (!dispo.disponible) {
     );
 
     if (creneauExistant) {
-      return creneauExistant.couleur.bg;
+      return creneauExistant.couleur?.bg || 'bg-gray-100';
     }
 
     if (estApercu && filtres.professeur) {
-      return couleursProfesseurs[filtres.professeur.id].bg;
+      return couleursProfesseurs[filtres.professeur.id]?.bg || 'bg-gray-100';
+    }
+
+    if (!peutSelectionner && tousLesFiltresSelectionnes()) {
+      return 'bg-gray-300'; // Gris plus foncé pour les créneaux indisponibles
     }
 
     if (!peutSelectionner) {
@@ -401,6 +527,19 @@ if (!dispo.disponible) {
         });
   
         setCreneauSelectionne(null);
+        
+        // Déclencher un événement personnalisé pour notifier les autres composants
+        const event = new CustomEvent('plageSupprimee', { 
+          detail: { 
+            jour: creneau.jour,
+            professeurId: creneau.professeur.id,
+            coursId: creneau.cours.id,
+            groupe: creneau.groupe,
+            etapeId: creneau.etapeId
+          } 
+        });
+        window.dispatchEvent(event);
+        
         alert('Plage supprimée avec succès ✅');
       } catch (err) {
         console.error("❌ Erreur suppression plage horaire :", err);
@@ -409,9 +548,6 @@ if (!dispo.disponible) {
     }
   };
   
-
-
-
   const rendreCreneauxHoraires = (jour, heure) => {
     const creneaux = creneauxHorairesGroupes.filter(
       creneau => creneau.jour === jour && parseInt(creneau.heureDebut) === heure
@@ -432,7 +568,7 @@ if (!dispo.disponible) {
               groupe={creneau.groupe}
               modeCours={creneau.modeCours}
               consecutifs={creneau.consecutifs}
-              couleur={creneau.couleur}
+              couleur={creneau.couleur || couleursProfesseurs['default']}
               onSupprimer={() => gererSuppressionCreneau(creneau.id)}
               onClick={() => setCreneauSelectionne(creneau)}
             />
@@ -451,11 +587,31 @@ if (!dispo.disponible) {
         groupe={creneau.groupe}
         modeCours={creneau.modeCours}
         consecutifs={creneau.consecutifs}
-        couleur={creneau.couleur}
+        couleur={creneau.couleur || couleursProfesseurs['default']}
         onSupprimer={() => gererSuppressionCreneau(creneau.id)}
         onClick={() => setCreneauSelectionne(creneau)}
       />
     ));
+  };
+
+  const gererSurvolCreneau = (jour, heure) => {
+    if (!tousLesFiltresSelectionnes()) return;
+    
+    const heuresConsecutives = filtres.duree?.id || 1;
+    const dispo = estCreneauDisponible(jour, heure, heuresConsecutives);
+    
+    if (!dispo.disponible) {
+      setRaisonIndisponibilite({ jour, heure, raison: dispo.raison });
+    } else {
+      setRaisonIndisponibilite(null);
+    }
+    
+    setCreneauSurvole({ jour, heure });
+  };
+
+  const gererFinSurvolCreneau = () => {
+    setCreneauSurvole(null);
+    setRaisonIndisponibilite(null);
   };
 
   return (
@@ -463,11 +619,10 @@ if (!dispo.disponible) {
       <div className="flex-none p-6">
         <EnTeteCalendrier onChangementFiltre={gererChangementFiltre} filtres={filtres} />
         <SelecteurEtape
-  etapeSelectionnee={etapeVueSelectionnee}
-  onChangementEtape={gererChangementEtape}
-  programmeId={filtres.programme?._id}
-/>
-
+          etapeSelectionnee={etapeVueSelectionnee}
+          onChangementEtape={gererChangementEtape}
+          programmeId={filtres.programme?._id}
+        />
         
         {!etapeVueSelectionnee && (
           <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -485,131 +640,126 @@ if (!dispo.disponible) {
           </div>
         )}
 
-        {creneauSelectionne && (
-            <div className="mb-4 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-2 border-b bg-gray-50">
-                <div className="flex items-center space-x-2">
-                  <div className={`w-2 h-2 rounded-full ${creneauSelectionne.couleur.badge}`}/>
-                  <h3 className="text-sm font-medium text-gray-700">Détails de la réservation</h3>
-                </div>
-                <button
-                    onClick={() => setCreneauSelectionne(null)}
-                    className="p-1 hover:bg-gray-200 rounded-full transition-colors"
-                >
-                  <X className="w-4 h-4 text-gray-500"/>
-                </button>
-              </div>
-              <div className="p-3 flex justify-between items-center">
-                <div className="flex items-center space-x-6">
-                  <div className="flex items-center space-x-2">
-                    <Users className="w-4 h-4 text-gray-400"/>
-                    <div className="flex items-center">
-                     
-                      <div>
-                        <p className="text-sm font-medium text-gray-800">{creneauSelectionne.professeur.nom}</p>
-                        <p className="text-xs text-gray-500">{creneauSelectionne.professeur.code}</p>
-                      </div>
-                    </div>
-                  </div>
+{creneauSelectionne && (
+  <div className="mb-4 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+    {/* En-tête du détail */}
+    <div className="flex items-center justify-between px-2 py-1 border-b bg-gray-50">
+      <div className="flex items-center space-x-1">
+        <div className={`w-2 h-2 rounded-full ${creneauSelectionne.couleur?.badge || 'bg-gray-500'}`} />
+        <h3 className="text-xs font-medium text-gray-700">Détails de la réservation</h3>
+      </div>
+      <button
+        onClick={() => setCreneauSelectionne(null)}
+        className="text-gray-400 hover:text-gray-500"
+      >
+        <X className="w-3 h-3" />
+      </button>
+    </div>
+    {/* Contenu du détail */}
+    <div className="p-2">
+      <div className="grid grid-cols-2 gap-2">
+        {/* Exemple d'information sur le professeur */}
+        <div>
+          <div className="flex items-center mb-1">
+            <Users className="w-3 h-3 text-gray-400 mr-1" />
+            <span className="text-xs font-medium text-gray-700">Professeur</span>
+          </div>
+          <p className="text-xs text-gray-600">{creneauSelectionne.professeur.nom}</p>
+        </div>
+        {/* Exemple d'information sur le cours */}
+        <div>
+          <div className="flex items-center mb-1">
+            <BookOpen className="w-3 h-3 text-gray-400 mr-1" />
+            <span className="text-xs font-medium text-gray-700">Cours</span>
+          </div>
+          <p className="text-xs text-gray-600">
+            {creneauSelectionne.cours.code} - {creneauSelectionne.cours.nom}
+          </p>
+        </div>
+        {/* Ajoutez ici d'autres informations de réservation si nécessaire */}
+      </div>
+      {/* Bouton pour supprimer toute la plage si plusieurs créneaux consécutifs */}
+      {true && (
+  <div className="mt-2">
+    <button
+      onClick={() => supprimerPlageReservation(creneauSelectionne)}
+      className="px-2 py-1 bg-red-500 text-white rounded text-xs"
+    >
+      Supprimer toute la plage
+    </button>
+  </div>
+)}
 
-                  <div className="flex items-center space-x-2">
-                    <BookOpen className="w-4 h-4 text-gray-400"/>
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{creneauSelectionne.cours.code}</p>
-                      <p className="text-xs text-gray-500">{creneauSelectionne.cours.nom}</p>
-                    </div>
-                  </div>
+    </div>
+  </div>
+)}
 
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-gray-400"/>
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{creneauSelectionne.jour}</p>
-                      <p className="text-xs text-gray-500">{creneauSelectionne.heureDebut} - {creneauSelectionne.heureFin}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Monitor className="w-4 h-4 text-gray-400"/>
-                    <div>
-                      <p className="text-sm font-medium text-gray-800 flex items-center">
-                        <span className="mr-1">{creneauSelectionne.modeCours.icone}</span>
-                        {creneauSelectionne.modeCours.nom}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Users className="w-4 h-4 text-gray-400"/>
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">
-                        Groupe {creneauSelectionne.groupe}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                    onClick={() => supprimerPlageReservation(creneauSelectionne)}
-                    className="p-2 rounded-full hover:bg-red-100 transition"
-                    title="Supprimer cette réservation"
-                >
-                  <Trash2 className="w-5 h-5 text-red-500"/>
-                </button>
-              </div>
-            </div>
-        )}
       </div>
 
-      <div className="flex-1 overflow-hidden px-6 pb-6">
-        <div className="flex h-full">
-          <StatistiquesProfesseur creneauxParEtape={creneauxParEtape}/>
+      <div className="flex-1 overflow-auto p-6 pt-0 flex">
+        {/* Statistiques Globales */}
+        <StatistiquesProfesseur creneauxParEtape={creneauxParEtape} />
+        
+        <div className="flex-1 overflow-auto bg-white rounded-lg shadow-sm">
+          <div className="sticky top-0 z-10 grid grid-cols-6 border-b bg-white">
+            <div className="p-2 text-center font-medium text-gray-500 bg-gray-50 border-r"></div>
+            {joursDelaSemaine.map((jour) => (
+              <div key={jour} className="p-2 text-center font-medium text-gray-700 bg-gray-50 border-r last:border-r-0">
+                {jour}
+              </div>
+            ))}
+          </div>
 
-          <div className="flex-1 bg-white rounded-lg shadow-sm overflow-auto">
-            <div className="sticky top-0 z-10 bg-white grid grid-cols-5 border-b">
-              {joursDelaSemaine.map((jour) => (
-                  <div
-                      key={jour}
-                      className="px-4 py-3 text-center font-semibold text-gray-700 border-r last:border-r-0"
-                  >
-                    {jour}
-                  </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-5">
-              {joursDelaSemaine.map((jour) => (
-                  <div key={jour} className="border-r last:border-r-0">
-                    {heuresVisibles.map((heure) => {
-                      const heuresConsecutives = filtres.duree?.id || 1;
-                      const estDisponible = estCreneauDisponible(jour, heure, heuresConsecutives);
-                      const peutSelectionner = etapeVueSelectionnee && tousLesFiltresSelectionnes() && estDisponible;
-                      const estApercu = estCreneauEnApercu(jour, heure);
-                      const couleurFond = obtenirCouleurFondCreneau(jour, heure, estDisponible, peutSelectionner, estApercu);
-
-                      return (
-                          <div
-                              key={heure}
-                              className={`h-24 border-b last:border-b-0 p-2 transition-colors duration-150 ${
-                                  peutSelectionner ? 'cursor-pointer hover:bg-gray-50' : 'cursor-not-allowed'
-                              } ${couleurFond} ${
-                                  estApercu && filtres.professeur
-                                      ? `border-2 border-${couleursProfesseurs[filtres.professeur.id].badge.replace('bg-', '')}`
-                                      : ''
-                              }`}
-                              onClick={() => gererClicCreneau(jour, heure)}
-                              onMouseEnter={() => peutSelectionner && setCreneauSurvole({jour, heure})}
-                              onMouseLeave={() => setCreneauSurvole(null)}
-                          >
-                          <div className="text-xs text-gray-500 mb-1">
-                          {`${heure}:00`}
-                        </div>
-                        {rendreCreneauxHoraires(jour, heure)}
-                      </div>
-                    );
-                  })}
+          <div className="min-h-[1200px]"> {/* Hauteur minimale pour assurer que tous les créneaux sont visibles */}
+            {heuresVisibles.map((heure) => (
+              <div key={heure} className="grid grid-cols-6 border-b last:border-b-0">
+                <div className="p-2 text-center text-sm font-medium text-gray-500 bg-gray-50 border-r">
+                  {heure}:00
                 </div>
-              ))}
-            </div>
+                {joursDelaSemaine.map((jour) => {
+                  const dispo = estCreneauDisponible(jour, heure, filtres.duree?.id || 1);
+                  const estDisponible = dispo.disponible;
+                  const peutSelectionner = tousLesFiltresSelectionnes() && estDisponible;
+                  const estApercu = estCreneauEnApercu(jour, heure);
+                  const couleurFond = obtenirCouleurFondCreneau(jour, heure, estDisponible, peutSelectionner, estApercu);
+                  const estIndisponible = tousLesFiltresSelectionnes() && !estDisponible;
+                  const afficherRaison = raisonIndisponibilite && 
+                                        raisonIndisponibilite.jour === jour && 
+                                        raisonIndisponibilite.heure === heure;
+                  
+                  return (
+                    <div
+                      key={`${jour}-${heure}`}
+                      className={`relative border-r last:border-r-0 min-h-[60px] ${couleurFond} ${
+                        peutSelectionner ? 'cursor-pointer hover:bg-gray-100' : 
+                        estIndisponible ? 'cursor-not-allowed' : ''
+                      }`}
+                      onClick={() => peutSelectionner && gererClicCreneau(jour, heure)}
+                      onMouseEnter={() => gererSurvolCreneau(jour, heure)}
+                      onMouseLeave={gererFinSurvolCreneau}
+                    >
+                      {rendreCreneauxHoraires(jour, heure)}
+                      
+                      {/* Indicateur visuel pour créneaux indisponibles */}
+                      {estIndisponible && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <XCircle className="w-6 h-6 text-red-500 opacity-50" />
+                        </div>
+                      )}
+                      
+                      {/* Tooltip pour afficher la raison d'indisponibilité */}
+                      {afficherRaison && (
+                        <div className="absolute z-20 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded shadow-lg whitespace-nowrap">
+                          {raisonIndisponibilite.raison}
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-8 border-transparent border-t-gray-800"></div>
+                        </div>
+                      )}
+                      
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
           </div>
         </div>
       </div>
