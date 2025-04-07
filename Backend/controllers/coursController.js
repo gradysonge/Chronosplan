@@ -1,4 +1,5 @@
 const Cours = require('../models/Cours');
+const mongoose = require('mongoose');
 
 exports.getCours = async (req, res) => {
     try {
@@ -9,15 +10,36 @@ exports.getCours = async (req, res) => {
     }
 };
 
+
+
+
 exports.addCours = async (req, res) => {
-    try {
-        const newCours = new Cours(req.body);
-        const saved = await newCours.save();
-        res.status(201).json(saved);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
+  try {
+    console.log("▶️ Données reçues :", req.body);
+
+    // S’assurer que programmeId est bien un ObjectId
+    req.body.programmeId = new mongoose.Types.ObjectId(req.body.programmeId);
+
+    const newCours = new Cours(req.body);
+    const saved = await newCours.save();
+    console.log("✅ Cours ajouté :", saved);
+    res.status(201).json(saved);
+  } catch (err) {
+    console.error("❌ Erreur ajout cours :", err);
+
+    if (err.code === 11000) {
+      return res.status(400).json({
+        error: "Ce cours existe déjà pour ce programme et cette étape.",
+        details: err.keyValue
+      });
     }
+
+    res.status(400).json({ error: err.message });
+  }
 };
+
+  
+
 
 exports.updateCours = async (req, res) => {
     try {

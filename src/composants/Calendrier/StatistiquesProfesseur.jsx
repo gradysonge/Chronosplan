@@ -19,13 +19,16 @@ const StatistiquesProfesseur = ({ creneauxParEtape }) => {
           };
         }
 
-        if (!statistiques[idProf].creneauxParEtape[creneau.etape.id]) {
-          statistiques[idProf].creneauxParEtape[creneau.etape.id] = {
-            etape: creneau.etape,
-            creneaux: []
-          };
-        }
-        statistiques[idProf].creneauxParEtape[creneau.etape.id].creneaux.push(creneau);
+        const etapeId = creneau.etape?.id || creneau.etapeId || 'inconnue';
+
+if (!statistiques[idProf].creneauxParEtape[etapeId]) {
+  statistiques[idProf].creneauxParEtape[etapeId] = {
+    etape: creneau.etape || { id: etapeId, nom: `Étape ${etapeId}` },
+    creneaux: []
+  };
+}
+statistiques[idProf].creneauxParEtape[etapeId].creneaux.push(creneau);
+
 
         statistiques[idProf].heuresTotal += 1;
         if (creneau.modeCours.id === 'online') {
@@ -173,11 +176,7 @@ const StatistiquesProfesseur = ({ creneauxParEtape }) => {
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center space-x-2">
-                    <img
-                      src={stat.professeur.avatar}
-                      alt={stat.professeur.nom}
-                      className="w-8 h-8 rounded-full"
-                    />
+                    
                     <div>
                       <div className="font-medium text-gray-800">{stat.professeur.nom}</div>
                       <div className="text-xs text-gray-500">{stat.professeur.code}</div>

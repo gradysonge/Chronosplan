@@ -8,6 +8,15 @@ exports.getProgrammes = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+exports.getProgrammeById = async (req, res) => {
+    try {
+      const programme = await Programme.findById(req.params.id);
+      res.json(programme);
+    } catch (err) {
+      res.status(404).json({ error: "Programme non trouvé" });
+    }
+  };
+  
 
 exports.addProgramme = async (req, res) => {
     try {
