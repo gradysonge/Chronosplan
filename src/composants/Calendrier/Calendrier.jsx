@@ -626,79 +626,60 @@ const Calendrier = () => {
           </div>
         )}
 
-        {creneauSelectionne && (
-          <div className="mb-4 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-2 border-b bg-gray-50">
-              <div className="flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${creneauSelectionne.couleur?.badge || 'bg-gray-500'}`}/>
-                <h3 className="text-sm font-medium text-gray-700">Détails de la réservation</h3>
-              </div>
-              <button
-                onClick={() => setCreneauSelectionne(null)}
-                className="text-gray-400 hover:text-gray-500"
-              >
-                <X className="w-4 h-4"/>
-              </button>
-            </div>
-            <div className="p-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="flex items-center mb-2">
-                    <Users className="w-4 h-4 text-gray-400 mr-2"/>
-                    <span className="text-sm font-medium text-gray-700">Professeur</span>
-                  </div>
-                  <p className="text-sm text-gray-600">{creneauSelectionne.professeur.nom}</p>
-                </div>
-                <div>
-                  <div className="flex items-center mb-2">
-                    <BookOpen className="w-4 h-4 text-gray-400 mr-2"/>
-                    <span className="text-sm font-medium text-gray-700">Cours</span>
-                  </div>
-                  <p className="text-sm text-gray-600">{creneauSelectionne.cours.code} - {creneauSelectionne.cours.nom}</p>
-                </div>
-                <div>
-                  <div className="flex items-center mb-2">
-                    <Users className="w-4 h-4 text-gray-400 mr-2"/>
-                    <span className="text-sm font-medium text-gray-700">Groupe</span>
-                  </div>
-                  <p className="text-sm text-gray-600">{creneauSelectionne.groupe}</p>
-                </div>
-                <div>
-                  <div className="flex items-center mb-2">
-                    <Clock className="w-4 h-4 text-gray-400 mr-2"/>
-                    <span className="text-sm font-medium text-gray-700">Horaire</span>
-                  </div>
-                  <p className="text-sm text-gray-600">{creneauSelectionne.jour}, {creneauSelectionne.heureDebut} - {creneauSelectionne.heureFin}</p>
-                </div>
-                {creneauSelectionne.modeCours?.nom && (
-                  <div>
-                    <div className="flex items-center mb-2">
-                      <Monitor className="w-4 h-4 text-gray-400 mr-2"/>
-                      <span className="text-sm font-medium text-gray-700">Mode</span>
-                    </div>
-                    <p className="text-sm text-gray-600">{creneauSelectionne.modeCours.icone} {creneauSelectionne.modeCours.nom}</p>
-                  </div>
-                )}
-              </div>
-              <div className="mt-4 flex justify-end space-x-2">
-                <button
-                  onClick={() => supprimerPlageReservation(creneauSelectionne)}
-                  className="flex items-center px-3 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 text-sm"
-                >
-                  <Trash2 className="w-3 h-3 mr-1"/>
-                  Supprimer la plage
-                </button>
-                <button
-                  onClick={() => gererSuppressionCreneau(creneauSelectionne.id)}
-                  className="flex items-center px-3 py-1 bg-gray-50 text-gray-600 rounded hover:bg-gray-100 text-sm"
-                >
-                  <Trash2 className="w-3 h-3 mr-1"/>
-                  Supprimer ce créneau
-                </button>
-              </div>
-            </div>
+{creneauSelectionne && (
+  <div className="mb-4 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+    {/* En-tête du détail */}
+    <div className="flex items-center justify-between px-2 py-1 border-b bg-gray-50">
+      <div className="flex items-center space-x-1">
+        <div className={`w-2 h-2 rounded-full ${creneauSelectionne.couleur?.badge || 'bg-gray-500'}`} />
+        <h3 className="text-xs font-medium text-gray-700">Détails de la réservation</h3>
+      </div>
+      <button
+        onClick={() => setCreneauSelectionne(null)}
+        className="text-gray-400 hover:text-gray-500"
+      >
+        <X className="w-3 h-3" />
+      </button>
+    </div>
+    {/* Contenu du détail */}
+    <div className="p-2">
+      <div className="grid grid-cols-2 gap-2">
+        {/* Exemple d'information sur le professeur */}
+        <div>
+          <div className="flex items-center mb-1">
+            <Users className="w-3 h-3 text-gray-400 mr-1" />
+            <span className="text-xs font-medium text-gray-700">Professeur</span>
           </div>
-        )}
+          <p className="text-xs text-gray-600">{creneauSelectionne.professeur.nom}</p>
+        </div>
+        {/* Exemple d'information sur le cours */}
+        <div>
+          <div className="flex items-center mb-1">
+            <BookOpen className="w-3 h-3 text-gray-400 mr-1" />
+            <span className="text-xs font-medium text-gray-700">Cours</span>
+          </div>
+          <p className="text-xs text-gray-600">
+            {creneauSelectionne.cours.code} - {creneauSelectionne.cours.nom}
+          </p>
+        </div>
+        {/* Ajoutez ici d'autres informations de réservation si nécessaire */}
+      </div>
+      {/* Bouton pour supprimer toute la plage si plusieurs créneaux consécutifs */}
+      {true && (
+  <div className="mt-2">
+    <button
+      onClick={() => supprimerPlageReservation(creneauSelectionne)}
+      className="px-2 py-1 bg-red-500 text-white rounded text-xs"
+    >
+      Supprimer toute la plage
+    </button>
+  </div>
+)}
+
+    </div>
+  </div>
+)}
+
       </div>
 
       <div className="flex-1 overflow-auto p-6 pt-0 flex">
@@ -759,6 +740,7 @@ const Calendrier = () => {
                           <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-8 border-transparent border-t-gray-800"></div>
                         </div>
                       )}
+                      
                     </div>
                   );
                 })}

@@ -68,6 +68,21 @@ const EnTeteCalendrier = ({ onChangementFiltre, filtres }) => {
   const [coursBD, setCoursBD] = useState([]);
   const [professeursBD, setProfesseursBD] = useState([]);
 
+const reinitialiserFiltres = () => {
+  setProgrammeSelectionne(null);
+  setCoursSelectionne(null);
+  setEtapesFiltrees([]);
+  onChangementFiltre({
+    programme: null,
+    etape: null,
+    cours: null,
+    groupe: null,
+    professeur: null,
+    modeCours: null,
+    duree: null,
+  });
+};
+  
   useEffect(() => {
     const fetchProgrammes = async () => {
       const res = await fetch('http://localhost:5000/api/programmes');
@@ -105,9 +120,19 @@ const EnTeteCalendrier = ({ onChangementFiltre, filtres }) => {
   const gererChangementProgramme = (programme) => {
     setProgrammeSelectionne(programme);
     setEtapesFiltrees(programme.etapes || []);
-    onChangementFiltre?.({ programme });
+    // Réinitialiser les sélections dépendantes
+    setCoursSelectionne(null);
+    onChangementFiltre({
+      programme,
+      etape: null,
+      cours: null,
+      groupe: null,
+      professeur: null,
+      modeCours: null,
+      duree: null,
+    });
   };
-
+  
   const gererChangementProfesseur = (prof) => {
     onChangementFiltre?.({ professeur: prof });
   };
@@ -126,8 +151,16 @@ const EnTeteCalendrier = ({ onChangementFiltre, filtres }) => {
   };
 
   const gererChangementEtape = (etape) => {
-    onChangementFiltre?.({ etape });
+    onChangementFiltre({
+      etape,
+      cours: null,
+      groupe: null,
+      professeur: null,
+      modeCours: null,
+      duree: null,
+    });
   };
+  
 
   const gererChangementDuree = (duree) => {
     onChangementFiltre?.({ duree });
@@ -139,7 +172,7 @@ const EnTeteCalendrier = ({ onChangementFiltre, filtres }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-      <div className="grid grid-cols-7 gap-4">
+      <div className="grid grid-cols-8 gap-4">
         <MenuDeroulant
           libelle="Programme"
           options={programmesBD}
@@ -189,8 +222,20 @@ const EnTeteCalendrier = ({ onChangementFiltre, filtres }) => {
           onChange={gererChangementDuree}
           typeIcone="clock"
         />
+
       </div>
+      <div className="mt-2 flex justify-end">
+  <button
+    onClick={reinitialiserFiltres}
+    className="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+  >
+    Réinitialiser les filtres
+  </button>
+</div>
+
     </div>
+    
+    
   );
 };
 
