@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit, Save, X, Search, Mail, Calendar, Clock, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 
 const GestionProfesseurs = () => {
@@ -267,13 +268,48 @@ const GestionProfesseurs = () => {
       mode: creneau.modeCours?.nom || 'Non spécifié'
     };
   };
-
   const exporterEmploiDuTemps = () => {
     if (!professeurSelectionne) return;
     
-    alert(`Exportation de l'emploi du temps pour ${professeurSelectionne.nom} (${professeurSelectionne.code})`);
-    // Normalement, utiliserait la bibliothèque XLSX pour exporter l'emploi du temps mais on va faire ca apres le livrable du frontend - david ou charles 
+    // Construire le tableau de données
+    const donnees = [];
+    
+    // Titre
+    donnees.push([`Emploi du temps - ${professeurSelectionne.nom} (${professeurSelectionne.code})`]);
+    donnees.push([]); // Ligne vide pour espacer
+    
+    // En-têtes de colonnes
+    donnees.push(["Jour", "Heure Début", "Heure Fin", "Cours", "Groupe", "Mode d'enseignement"]);
+    
+    // Ajouter les créneaux récupérés pour le professeur
+    creneauxProfesseur.forEach(creneau => {
+      // On suppose que chaque créneau contient les propriétés : jour, heureDebut, heureFin, cours, groupe, et modeCours
+      const cours = creneau.cours ? creneau.cours.code : "";
+      const groupe = creneau.groupe || "";
+      const mode = creneau.modeCours ? creneau.modeCours.nom : "";
+      
+      donnees.push([
+        creneau.jour,
+        creneau.heureDebut,
+        creneau.heureFin,
+        cours,
+        groupe,
+        mode
+      ]);
+    });
+    
+    // Créer une feuille Excel à partir des données
+    const feuille = XLSX.utils.aoa_to_sheet(donnees);
+    const classeur = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(classeur, feuille, "Emploi du temps");
+    
+    // Nom du fichier de sortie
+    const nomFichier = `emploi_du_temps_${professeurSelectionne.code}.xlsx`;
+    
+    // Générer et télécharger le fichier Excel
+    XLSX.writeFile(classeur, nomFichier);
   };
+  
 
   return (
     <div className="p-6 h-full overflow-auto">
@@ -601,29 +637,35 @@ const GestionProfesseurs = () => {
                 </div>
               </div>
 
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Statistiques d'enseignement</h4>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <div className="flex justify-between mb-2">
-                    <span className="text-xs text-gray-600">Heures attribuées</span>
-                    <span className="text-xs font-medium">0h / {professeurSelectionne.heuresMax}h</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div className="bg-emerald-600 h-2.5 rounded-full" style={{ width: '0%' }}></div>
-                  </div>
-                  
-                  <div className="mt-4 grid grid-cols-2 gap-2">
-                    <div className="bg-white rounded p-2">
-                      <div className="text-xs text-gray-500">En ligne</div>
-                      <div className="text-sm font-medium text-blue-600">0h</div>
-                    </div>
-                    <div className="bg-white rounded p-2">
-                      <div className="text-xs text-gray-500">Présentiel</div>
-                      <div className="text-sm font-medium text-emerald-600">0h</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {professeurSelectionne && (
+  <div className="mt-4 bg-gray-50 p-4 rounded-lg">
+    <h3 className="text-md font-semibold text-gray-800 mb-2">Statistiques Enseignement</h3>
+    <div className="grid grid-cols-3 gap-4">
+      {/* Total */}
+      <div className="text-center">
+        <p className="text-xl font-bold text-gray-800">
+          {creneauxProfesseur.length}h
+        </p>
+        <p className="text-sm text-gray-600">Total</p>
+      </div>
+      {/* En ligne */}
+      <div className="text-center">
+        <p className="text-xl font-bold text-gray-800">
+          {creneauxProfesseur.filter(c => c.modeCours && c.modeCours.id === 'online').length}h
+        </p>
+        <p className="text-sm text-gray-600">En ligne</p>
+      </div>
+      {/* En présentiel */}
+      <div className="text-center">
+        <p className="text-xl font-bold text-gray-800">
+          {creneauxProfesseur.length - 
+            creneauxProfesseur.filter(c => c.modeCours && c.modeCours.id === 'online').length}h
+        </p>
+        <p className="text-sm text-gray-600">En présentiel</p>
+      </div>
+    </div>
+  </div>
+)}
             </div>
           ) : (
             <div className="text-center py-12 text-gray-500">
