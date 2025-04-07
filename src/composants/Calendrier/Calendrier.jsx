@@ -182,22 +182,48 @@ const Calendrier = () => {
   };
 
   const estCreneauDisponible = (jour, heure, heuresConsecutives = 1) => {
-    for (let i = 0; i < heuresConsecutives; i++) {
-      // Vérification existante dans l'étape actuelle
-      const creneauxEtapeActuelle = creneauxParEtape[etapeVueSelectionnee?.id] || [];
-
-      const creneauxConflictuels = creneauxEtapeActuelle.filter(creneau =>
-          creneau.jour === jour &&
-          parseInt(creneau.heureDebut) === (heure + i) &&
-          creneau.cours.code === filtres.cours?.code
-      );
-
-      if (creneauxConflictuels.length >= 2 ||
-          creneauxConflictuels.some(creneau => creneau.modeCours.id === filtres.modeCours?.id)) {
-        return { disponible: false, raison: "Ce créneau est déjà occupé par ce cours." };
+    const creneauxEtapeActuelle = creneauxParEtape[etapeVueSelectionnee?.id] || [];
+  
+    // Vérification globale : cumuler les heures déjà programmées pour ce cours et ce groupe
+    if (filtres.cours && filtres.groupe) {
+      const totalHeuresCoursGroupe = creneauxEtapeActuelle
+        .filter(creneau =>
+          creneau.cours.code === filtres.cours.code &&
+          creneau.groupe === filtres.groupe
+        )
+        .reduce((acc, creneau) => {
+          return acc + (parseInt(creneau.heureFin) - parseInt(creneau.heureDebut));
+        }, 0);
+      
+      if (totalHeuresCoursGroupe + heuresConsecutives > 3) {
+        return { disponible: false, raison: "Ce groupe a déjà atteint la limite de 3 heures pour ce cours cette semaine." };
       }
-
-      // Vérification du groupe occupé
+    }
+  
+    for (let i = 0; i < heuresConsecutives; i++) {
+      // Créneaux déjà programmés pour le même jour, même heure et même cours
+      const creneauxConflictuels = creneauxEtapeActuelle.filter(creneau =>
+        creneau.jour === jour &&
+        parseInt(creneau.heureDebut) === (heure + i) &&
+        creneau.cours.code === filtres.cours?.code
+      );
+      
+      // 1. Vérifier si le professeur est déjà programmé pour ce cours à cet horaire.
+      if (creneauxConflictuels.some(creneau => creneau.professeur.id === filtres.professeur?.id)) {
+        return { disponible: false, raison: "Ce professeur a déjà un cours de ce type à ce moment." };
+      }
+      
+      // 2. S'il y a déjà un créneau et que le groupe est identique, ce n'est pas autorisé.
+      if (creneauxConflictuels.length === 1 && creneauxConflictuels[0].groupe === filtres.groupe) {
+        return { disponible: false, raison: "Ce groupe a déjà ce cours à ce moment." };
+      }
+      
+      // 3. Refuser l'ajout si deux créneaux existent déjà (même cours, même horaire)
+      if (creneauxConflictuels.length >= 2) {
+        return { disponible: false, raison: "Deux instances de ce cours sont déjà programmées simultanément." };
+      }
+  
+      // Vérification du groupe occupé à cet horaire (indépendamment du cours)
       const groupeOccupe = creneauxEtapeActuelle.some(creneau =>
         creneau.jour === jour &&
         parseInt(creneau.heureDebut) === (heure + i) &&
@@ -206,8 +232,8 @@ const Calendrier = () => {
       if (groupeOccupe) {
         return { disponible: false, raison: "Ce groupe d'étudiants est déjà en cours à ce moment-là." };
       }
-  
-      // Professeur déjà occupé (toutes étapes)
+    
+      // Vérification globale : le professeur ne doit pas être occupé ailleurs (toutes étapes confondues)
       const professeurOccupeGlobalement = Object.values(creneauxParEtape).some(creneauxEtape =>
         creneauxEtape.some(creneau =>
           creneau.jour === jour &&
@@ -218,15 +244,14 @@ const Calendrier = () => {
       if (professeurOccupeGlobalement) {
         return { disponible: false, raison: "Ce professeur a déjà un cours à ce moment-là." };
       }
-  
-      // Heures autorisées
+    
+      // Vérifier que l'heure ne dépasse pas la limite autorisée (22h00)
       if (heure + i >= 22) {
         return { disponible: false, raison: "L'horaire dépasse la limite autorisée (22h00)." };
       }
-
+  
       // Vérification des heures consécutives (max 3h)
       if (filtres.professeur && filtres.cours) {
-        const creneauxEtapeActuelle = creneauxParEtape[etapeVueSelectionnee?.id] || [];
         const heuresConsecutivesExistantes = compterHeuresConsecutives(
           creneauxEtapeActuelle, 
           filtres.professeur.id, 
@@ -239,25 +264,14 @@ const Calendrier = () => {
           return { disponible: false, raison: "Un professeur ne peut pas donner plus de 3 heures consécutives du même cours." };
         }
       }
-
-      // Vérification des heures totales par semaine (max 3h)
-      if (filtres.professeur && filtres.cours && filtres.groupe) {
-        const creneauxEtapeActuelle = creneauxParEtape[etapeVueSelectionnee?.id] || [];
-        const heuresParSemaine = compterHeuresParSemaine(
-          creneauxEtapeActuelle, 
-          filtres.professeur.id, 
-          filtres.cours.id, 
-          filtres.groupe
-        );
-        
-        if (heuresParSemaine + heuresConsecutives > 3) {
-          return { disponible: false, raison: "Un professeur ne peut pas donner plus de 3 heures par semaine du même cours au même groupe." };
-        }
-      }
     }
-  
+    
     return { disponible: true };
   };
+  
+  
+  
+  
 
 
   const tousLesFiltresSelectionnes = () => {
